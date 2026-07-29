@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clinic Management System - Interactive Demo Video & Feature Presentation</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: #151c2c;
+      --primary: #06b6d4;
+      --primary-hover: #0891b2;
+      --accent: #3b82f6;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #1e293b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 30px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+    .video-container { width: 100%; max-width: 1000px; background: var(--card-bg); border-radius: 16px; border: 1px solid var(--border); overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+    .header { padding: 20px 30px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .header h1 { font-size: 1.3rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; }
+    .badge { background: rgba(6, 182, 212, 0.15); color: var(--primary); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; border: 1px solid rgba(6, 182, 212, 0.3); }
+    
+    .screen-stage { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    .slide-img { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.5s ease-in-out; }
+    
+    .overlay-controls { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); padding: 10px 20px; border-radius: 30px; display: flex; gap: 16px; align-items: center; }
+    .btn-play { background: var(--primary); color: #000; border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; font-size: 1.1rem; transition: transform 0.2s; }
+    .btn-play:hover { transform: scale(1.08); background: var(--primary-hover); }
+    .timeline { width: 400px; height: 6px; background: rgba(255,255,255,0.2); border-radius: 3px; position: relative; cursor: pointer; overflow: hidden; }
+    .progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); transition: width 0.1s linear; }
+    .time-display { font-size: 0.85rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+    .chapters { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--border); background: #0f172a; }
+    .chapter-btn { padding: 16px; background: none; border: none; border-bottom: 3px solid transparent; color: var(--text-muted); text-align: left; cursor: pointer; transition: all 0.2s; }
+    .chapter-btn.active { color: #fff; border-bottom-color: var(--primary); background: rgba(6, 182, 212, 0.05); }
+    .chapter-btn h4 { font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; }
+    .chapter-btn p { font-size: 0.75rem; color: var(--text-muted); }
+
+    .narrator-box { padding: 20px 30px; background: var(--card-bg); border-top: 1px solid var(--border); display: flex; gap: 16px; align-items: center; }
+    .narrator-avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--accent)); display: flex; align-items: center; justify-content: center; font-weight: bold; color: #000; flex-shrink: 0; }
+    .narrator-text { font-size: 0.95rem; color: #e2e8f0; line-height: 1.5; }
+  </style>
+</head>
+<body>
+
+  <div class="video-container">
+    <div class="header">
+      <h1>🩺 Clinic Management System — Official Demo Video Walkthrough</h1>
+      <span class="badge">Full-Stack Demo</span>
+    </div>
+
+    <div class="screen-stage">
+      <img id="slideImg" class="slide-img" src="" alt="Clinic Management Demo Slide">
+      <div class="overlay-controls">
+        <button id="playBtn" class="btn-play">▶</button>
+        <div class="timeline" id="timeline">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <span class="time-display" id="timeDisplay">00:00 / 01:20</span>
+      </div>
+    </div>
+
+    <div class="chapters">
+      <button class="chapter-btn active" onclick="seekChapter(0)">
+        <h4>1. Authentication & Roles</h4>
+        <p>JWT Login & Dynamic Access</p>
+      </button>
+      <button class="chapter-btn" onclick="seekChapter(1)">
+        <h4>2. Doctor Profiles</h4>
+        <p>Image Upload & Specific Details</p>
+      </button>
+      <button class="chapter-btn" onclick="seekChapter(2)">
+        <h4>3. Appointments Queue</h4>
+        <p>Filtered List & Scheduling</p>
+      </button>
+      <button class="chapter-btn" onclick="seekChapter(3)">
+        <h4>4. Role-Menu Matrix</h4>
+        <p>Admin Permission Controls</p>
+      </button>
+    </div>
+
+    <div class="narrator-box">
+      <div class="narrator-avatar">AI</div>
+      <div class="narrator-text" id="narratorText">
+        Welcome to the Clinic Management System demo presentation. Select play or click any chapter below to explore features.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const slides = [
+      {
+        img: 'C:/Users/User/.gemini/antigravity/brain/99abbec8-257c-4e20-9a04-60fee150ca87/clinic_demo_login_1785256998813.jpg',
+        title: 'Module 1: JWT Authentication & User Login',
+        text: 'The application features a secure JWT-based login system. Users log in with roles such as Super Admin, Doctor, Receptionist, or Patient, receiving encrypted access tokens for modular security.',
+        duration: 20
+      },
+      {
+        img: 'C:/Users/User/.gemini/antigravity/brain/99abbec8-257c-4e20-9a04-60fee150ca87/clinic_demo_doctors_1785257011079.jpg',
+        title: 'Module 2: Doctor Profiles & Profile Image Upload',
+        text: 'Doctors can view their profile cards and upload their own profile image. Doctors are restricted to editing only their own image, while Admins have full privileges to update details and photos for all doctors.',
+        duration: 20
+      },
+      {
+        img: 'C:/Users/User/.gemini/antigravity/brain/99abbec8-257c-4e20-9a04-60fee150ca87/clinic_demo_appointments_1785257025187.jpg',
+        title: 'Module 3: Doctor Appointment Management & Filtering',
+        text: 'The appointment scheduler automatically filters appointments by the logged-in doctor. Doctors view only their assigned patients, while Admins and Receptionists oversee the entire clinic queue with 1-click approvals.',
+        duration: 20
+      },
+      {
+        img: 'C:/Users/User/.gemini/antigravity/brain/99abbec8-257c-4e20-9a04-60fee150ca87/clinic_demo_roles_1785257037249.jpg',
+        title: 'Module 4: Role-Based Dynamic Menu Matrix & Architecture',
+        text: 'Admins can dynamically configure navigation menus per role using the interactive matrix. The backend is built with Spring Boot 3.4 (Java 21) using a clean Service Layer architecture, powered by MySQL 8.0 in Docker Compose.',
+        duration: 20
+      }
+    ];
+
+    let currentChapter = 0;
+    let isPlaying = false;
+    let timer = null;
+    let elapsedSeconds = 0;
+    const totalDuration = 80;
+
+    const slideImg = document.getElementById('slideImg');
+    const narratorText = document.getElementById('narratorText');
+    const playBtn = document.getElementById('playBtn');
+    const progressBar = document.getElementById('progressBar');
+    const timeDisplay = document.getElementById('timeDisplay');
+    const chapterBtns = document.querySelectorAll('.chapter-btn');
+
+    function updateView() {
+      slideImg.src = slides[currentChapter].img;
+      narratorText.innerHTML = `<strong>${slides[currentChapter].title}:</strong> ${slides[currentChapter].text}`;
+      chapterBtns.forEach((btn, idx) => {
+        btn.classList.toggle('active', idx === currentChapter);
+      });
+    }
+
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60).toString().padStart(2, '0');
+      const s = Math.floor(sec % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function tick() {
+      if (!isPlaying) return;
+      elapsedSeconds += 1;
+      if (elapsedSeconds >= totalDuration) {
+        elapsedSeconds = 0;
+        currentChapter = 0;
+        pause();
+      } else {
+        currentChapter = Math.floor(elapsedSeconds / 20);
+      }
+      progressBar.style.width = `${(elapsedSeconds / totalDuration) * 100}%`;
+      timeDisplay.textContent = `${formatTime(elapsedSeconds)} / ${formatTime(totalDuration)}`;
+      updateView();
+    }
+
+    function play() {
+      isPlaying = true;
+      playBtn.textContent = '⏸';
+      timer = setInterval(tick, 1000);
+    }
+
+    function pause() {
+      isPlaying = false;
+      playBtn.textContent = '▶';
+      clearInterval(timer);
+    }
+
+    playBtn.addEventListener('click', () => {
+      if (isPlaying) pause();
+      else play();
+    });
+
+    function seekChapter(idx) {
+      currentChapter = idx;
+      elapsedSeconds = idx * 20;
+      progressBar.style.width = `${(elapsedSeconds / totalDuration) * 100}%`;
+      timeDisplay.textContent = `${formatTime(elapsedSeconds)} / ${formatTime(totalDuration)}`;
+      updateView();
+    }
+
+    updateView();
+  </script>
+</body>
+</html>

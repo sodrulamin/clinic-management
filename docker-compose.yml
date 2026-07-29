@@ -1,0 +1,45 @@
+services:
+  mysql-db:
+    image: mysql:8.0
+    container_name: clinic-mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: clinic_db
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_USER: clinic_user
+      MYSQL_PASSWORD: clinic_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_clinic_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  spring-backend:
+    build: ./backend
+    container_name: clinic-backend
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/clinic_db?allowPublicKeyRetrieval=true&useSSL=false&createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_USERNAME: clinic_user
+      SPRING_DATASOURCE_PASSWORD: clinic_password
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+
+  react-frontend:
+    build: ./frontend
+    container_name: clinic-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - spring-backend
+
+volumes:
+  mysql_clinic_data:

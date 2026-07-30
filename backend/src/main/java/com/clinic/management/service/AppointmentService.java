@@ -27,36 +27,108 @@ public class AppointmentService {
     private final PatientRepository patientRepository;
     private final UserRepository userRepository;
 
-    public List<Appointment> getAllAppointments(Authentication authentication) {
+    public List<Appointment> getAllAppointments(Authentication authentication, LocalDate startDate, LocalDate endDate, Boolean allDates) {
+        List<Appointment> list;
         if (authentication != null) {
             boolean isAdminOrRec = authentication.getAuthorities().stream()
                     .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_RECEPTIONIST"));
 
             if (!isAdminOrRec) {
                 User user = userRepository.findByUsername(authentication.getName()).orElse(null);
-                if (user != null && "ROLE_DOCTOR".equals(user.getRole().getName())) {
+                if (user != null && user.getRole() != null && "ROLE_DOCTOR".equals(user.getRole().getName())) {
                     List<Doctor> allDocs = doctorRepository.findAll();
                     Doctor matchedDoc = allDocs.stream()
                             .filter(d -> (user.getEmail() != null && user.getEmail().equalsIgnoreCase(d.getEmail())) ||
-                                         (user.getFullName() != null && user.getFullName().equalsIgnoreCase(d.getFullName())))
+                                    (user.getFullName() != null && user.getFullName().equalsIgnoreCase(d.getFullName())) ||
+                                    (d.getFullName() != null && d.getFullName().toLowerCase().contains(user.getUsername().toLowerCase())))
                             .findFirst()
-                            .orElse(null);
+                            .orElse(allDocs.isEmpty() ? null : allDocs.getFirst());
 
                     if (matchedDoc != null) {
-                        return appointmentRepository.findByDoctorId(matchedDoc.getId());
+                        list = appointmentRepository.findByDoctorId(matchedDoc.getId());
                     } else {
-                        return List.of();
+                        list = List.of();
                     }
+                } else {
+                    list = appointmentRepository.findAll();
                 }
+            } else {
+                list = appointmentRepository.findAll();
+            }
+        } else {
+            list = appointmentRepository.findAll();
+        }
+
+        if (!Boolean.TRUE.equals(allDates)) {
+            if (startDate != null) {
+                list = list.stream().filter(a -> a.getAppointmentDate() != null && !a.getAppointmentDate().isBefore(startDate)).toList();
+            }
+            if (endDate != null) {
+                list = list.stream().filter(a -> a.getAppointmentDate() != null && !a.getAppointmentDate().isAfter(endDate)).toList();
             }
         }
-        return appointmentRepository.findAll();
+
+        return list;
     }
 
-    public Map<String, Object> getStats() {
+    public Map<String, Object> getStats(Authentication authentication, LocalDate startDate, LocalDate endDate, Boolean allDates) {
         Map<String, Object> stats = new HashMap<>();
-        stats.put("totalAppointments", appointmentRepository.count());
-        stats.put("todayAppointments", appointmentRepository.countByAppointmentDate(LocalDate.now()));
+
+        boolean isDoctor = false;
+        Doctor doctor = null;
+
+        if (authentication != null) {
+            User user = userRepository.findByUsername(authentication.getName()).orElse(null);
+            if (user != null && user.getRole() != null && "ROLE_DOCTOR".equals(user.getRole().getName())) {
+                isDoctor = true;
+                List<Doctor> allDocs = doctorRepository.findAll();
+                doctor = allDocs.stream()
+                        .filter(d -> (user.getEmail() != null && user.getEmail().equalsIgnoreCase(d.getEmail())) ||
+                                (user.getFullName() != null && user.getFullName().equalsIgnoreCase(d.getFullName())) ||
+                                (d.getFullName() != null && d.getFullName().toLowerCase().contains(user.getUsername().toLowerCase())))
+                        .findFirst()
+                        .orElse(allDocs.isEmpty() ? null : allDocs.get(0));
+            }
+        }
+
+        List<Appointment> apps;
+        if (isDoctor && doctor != null) {
+            apps = appointmentRepository.findByDoctorId(doctor.getId());
+        } else {
+            apps = appointmentRepository.findAll();
+        }
+
+        List<Appointment> filteredApps = apps;
+        boolean isAll = Boolean.TRUE.equals(allDates);
+
+        if (!isAll) {
+            LocalDate start = startDate != null ? startDate : (endDate == null ? LocalDate.now() : null);
+            LocalDate end = endDate != null ? endDate : (startDate == null ? LocalDate.now() : null);
+
+            if (start != null) {
+                filteredApps = filteredApps.stream().filter(a -> a.getAppointmentDate() != null && !a.getAppointmentDate().isBefore(start)).toList();
+            }
+            if (end != null) {
+                filteredApps = filteredApps.stream().filter(a -> a.getAppointmentDate() != null && !a.getAppointmentDate().isAfter(end)).toList();
+            }
+        }
+
+        List<Appointment> servedApps = filteredApps.stream()
+                .filter(a -> a.getStatus() == Appointment.AppointmentStatus.VISITED || a.getStatus() == Appointment.AppointmentStatus.COMPLETED)
+                .toList();
+
+        double defaultFee = (doctor != null && doctor.getConsultationFee() != null) ? doctor.getConsultationFee() : 0.0;
+
+        double income = servedApps.stream()
+                .mapToDouble(a -> a.getDoctor() != null && a.getDoctor().getConsultationFee() != null ? a.getDoctor().getConsultationFee() : defaultFee)
+                .sum();
+
+        stats.put("totalAppointments", apps.size());
+        stats.put("todayAppointments", filteredApps.size());
+        stats.put("todayVisited", servedApps.size());
+        stats.put("todayIncome", income);
+        stats.put("isDoctorView", isDoctor);
+
         return stats;
     }
 

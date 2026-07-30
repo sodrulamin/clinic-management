@@ -1,6 +1,7 @@
 package com.clinic.management.controller;
 
 import com.clinic.management.entity.Appointment;
+import com.clinic.management.scheduler.AppointmentScheduler;
 import com.clinic.management.service.AppointmentService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -19,17 +20,26 @@ import java.util.Map;
 public class AppointmentController {
 
     private final AppointmentService appointmentService;
+    private final AppointmentScheduler appointmentScheduler;
 
     @GetMapping
     @PreAuthorize("@securityService.hasAccess('/appointments')")
-    public ResponseEntity<List<Appointment>> getAllAppointments(Authentication authentication) {
-        return ResponseEntity.ok(appointmentService.getAllAppointments(authentication));
+    public ResponseEntity<List<Appointment>> getAllAppointments(
+            Authentication authentication,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
+            @RequestParam(required = false) Boolean allDates) {
+        return ResponseEntity.ok(appointmentService.getAllAppointments(authentication, startDate, endDate, allDates));
     }
 
     @GetMapping("/stats")
     @PreAuthorize("@securityService.hasAccess('/appointments')")
-    public ResponseEntity<Map<String, Object>> getStats() {
-        return ResponseEntity.ok(appointmentService.getStats());
+    public ResponseEntity<Map<String, Object>> getStats(
+            Authentication authentication,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
+            @RequestParam(required = false) Boolean allDates) {
+        return ResponseEntity.ok(appointmentService.getStats(authentication, startDate, endDate, allDates));
     }
 
     @PostMapping
@@ -42,6 +52,16 @@ public class AppointmentController {
     @PreAuthorize("@securityService.hasAccess('/appointments')")
     public ResponseEntity<?> updateStatus(@PathVariable Long id, @RequestParam Appointment.AppointmentStatus status) {
         return ResponseEntity.ok(appointmentService.updateStatus(id, status));
+    }
+
+    @PostMapping("/trigger-auto-cancel")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<?> triggerAutoCancel() {
+        int cancelled = appointmentScheduler.autoCancelUnservedAppointments();
+        return ResponseEntity.ok(Map.of(
+                "message", "ShedLock auto-cancel scheduler executed successfully",
+                "cancelledCount", cancelled
+        ));
     }
 
     @DeleteMapping("/{id}")

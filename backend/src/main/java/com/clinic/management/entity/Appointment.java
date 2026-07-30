@@ -34,7 +34,7 @@ public class Appointment {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private AppointmentStatus status; // SCHEDULED, COMPLETED, CANCELLED
+    private AppointmentStatus status; // SCHEDULED, VISITED, COMPLETED, CANCELLED
 
     @Column(columnDefinition = "TEXT")
     private String reason;
@@ -43,6 +43,7 @@ public class Appointment {
 
     public enum AppointmentStatus {
         SCHEDULED,
+        VISITED,
         COMPLETED,
         CANCELLED
     }

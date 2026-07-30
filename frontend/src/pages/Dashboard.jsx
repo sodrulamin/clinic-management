@@ -1,14 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import api from '../services/api';
-import { Users, UserPlus, Stethoscope, Calendar, Clock, ArrowRight } from 'lucide-react';
+import { AuthContext } from '../context/AuthContext';
+import { Users, UserPlus, Stethoscope, Calendar, Clock, ArrowRight, DollarSign, UserCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const Dashboard = () => {
+  const { user } = useContext(AuthContext);
+  const isDoctor = user?.role === 'ROLE_DOCTOR';
+
   const [stats, setStats] = useState({
     patients: 0,
     doctors: 0,
     appointments: 0,
     pendingRequests: 0,
+    todayVisited: 0,
+    todayIncome: 0,
   });
 
   useEffect(() => {
@@ -26,6 +32,8 @@ export const Dashboard = () => {
           doctors: doctorsRes.data.length || 0,
           appointments: appointmentsRes.data.todayAppointments || 0,
           pendingRequests: requestsRes.data.length || 0,
+          todayVisited: appointmentsRes.data.todayVisited || 0,
+          todayIncome: appointmentsRes.data.todayIncome || 0,
         });
       } catch (err) {
         console.error('Error fetching dashboard stats', err);
@@ -60,21 +68,21 @@ export const Dashboard = () => {
 
         <div className="stat-card">
           <div className="stat-icon success">
-            <Calendar />
+            <UserCheck />
           </div>
           <div>
-            <div className="stat-value">{stats.appointments}</div>
-            <div className="stat-label">Appointments Today</div>
+            <div className="stat-value">{stats.todayVisited}</div>
+            <div className="stat-label">{isDoctor ? "Patients Served Today" : "Patients Visited Today"}</div>
           </div>
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon warning">
-            <Clock />
+          <div className="stat-icon warning" style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b' }}>
+            <DollarSign />
           </div>
           <div>
-            <div className="stat-value">{stats.pendingRequests}</div>
-            <div className="stat-label">Pending Requests</div>
+            <div className="stat-value">${(stats.todayIncome || 0).toFixed(2)}</div>
+            <div className="stat-label">{isDoctor ? "Today's Income" : "Clinic Income Today"}</div>
           </div>
         </div>
       </div>
@@ -93,7 +101,7 @@ export const Dashboard = () => {
             <ArrowRight size={16} />
           </Link>
           <Link to="/appointments" className="btn btn-secondary" style={{ justifyContent: 'space-between', padding: '16px' }}>
-            <span>Book Appointment</span>
+            <span>Manage Appointments</span>
             <ArrowRight size={16} />
           </Link>
           <Link to="/appointment-requests" className="btn btn-secondary" style={{ justifyContent: 'space-between', padding: '16px' }}>

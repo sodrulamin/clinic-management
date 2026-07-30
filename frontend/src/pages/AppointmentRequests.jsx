@@ -213,7 +213,7 @@ export const AppointmentRequests = () => {
                   <option value="">-- Select Doctor --</option>
                   {doctors.map((d) => (
                     <option key={d.id} value={d.id}>
-                      {d.fullName} - {d.specialization} (${d.consultationFee})
+                      {d.fullName} - {d.specialization} (৳{d.consultationFee})
                     </option>
                   ))}
                 </select>

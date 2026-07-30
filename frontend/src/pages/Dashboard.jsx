@@ -81,7 +81,7 @@ export const Dashboard = () => {
             <DollarSign />
           </div>
           <div>
-            <div className="stat-value">${(stats.todayIncome || 0).toFixed(2)}</div>
+            <div className="stat-value">৳{(stats.todayIncome || 0).toFixed(2)}</div>
             <div className="stat-label">{isDoctor ? "Today's Income" : "Clinic Income Today"}</div>
           </div>
         </div>

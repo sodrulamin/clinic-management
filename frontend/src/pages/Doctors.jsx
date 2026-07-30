@@ -164,7 +164,7 @@ export const Doctors = () => {
               <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.7 }}>
                 <p><strong>Qualification:</strong> {doc.qualification || 'N/A'}</p>
                 <p><strong>Room:</strong> {doc.roomNo || 'N/A'}</p>
-                <p><strong>Fee:</strong> ${doc.consultationFee}</p>
+                <p><strong>Fee:</strong> ৳{doc.consultationFee}</p>
                 <p><strong>Hours:</strong> {doc.workingHours}</p>
                 <p><strong>Slot Duration:</strong> {doc.appointmentDurationMinutes || 20} mins</p>
                 <p><strong>Contact:</strong> {doc.phone || doc.email}</p>
@@ -301,7 +301,7 @@ export const Doctors = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Fee ($)</label>
+                  <label className="form-label">Fee (৳)</label>
                   <input
                     type="number"
                     className="form-input"

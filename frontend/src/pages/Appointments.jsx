@@ -131,7 +131,7 @@ export const Appointments = () => {
             <DollarSign />
           </div>
           <div>
-            <div className="stat-value">${(stats.todayIncome || 0).toFixed(2)}</div>
+            <div className="stat-value">৳{(stats.todayIncome || 0).toFixed(2)}</div>
             <div className="stat-label">
               {isDoctor
                 ? (!startDate && !endDate ? "Total Income" : (startDate === endDate ? "Today's Income" : "Income in Range"))
@@ -212,7 +212,7 @@ export const Appointments = () => {
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{app.doctor?.specialization}</div>
                   </td>
                   <td>
-                    <strong>${app.doctor?.consultationFee ? app.doctor.consultationFee.toFixed(2) : '0.00'}</strong>
+                    <strong>৳{app.doctor?.consultationFee ? app.doctor.consultationFee.toFixed(2) : '0.00'}</strong>
                   </td>
                   <td>{app.reason || '-'}</td>
                   <td>
@@ -300,7 +300,7 @@ export const Appointments = () => {
                   <option value="">-- Choose Doctor --</option>
                   {doctors.map((d) => (
                     <option key={d.id} value={d.id}>
-                      {d.fullName} - {d.specialization} (${d.consultationFee})
+                      {d.fullName} - {d.specialization} (৳{d.consultationFee})
                     </option>
                   ))}
                 </select>

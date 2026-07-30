@@ -25,7 +25,6 @@ export const Appointments = () => {
     doctorId: '',
     patientId: '',
     appointmentDate: new Date().toISOString().split('T')[0],
-    timeSlot: '10:00 AM',
     reason: '',
   });
 
@@ -74,7 +73,8 @@ export const Appointments = () => {
       setShowModal(false);
       fetchData();
     } catch (err) {
-      alert('Failed to schedule appointment');
+      const msg = err.response?.data?.message || err.message || 'Failed to schedule appointment';
+      alert(msg);
     }
   };
 
@@ -306,29 +306,15 @@ export const Appointments = () => {
                 </select>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div className="form-group">
-                  <label className="form-label">Appointment Date</label>
-                  <input
-                    type="date"
-                    className="form-input"
-                    value={formData.appointmentDate}
-                    onChange={(e) => setFormData({ ...formData, appointmentDate: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Preferred Time</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="e.g. 10:30 AM"
-                    value={formData.timeSlot}
-                    onChange={(e) => setFormData({ ...formData, timeSlot: e.target.value })}
-                    required
-                  />
-                </div>
+              <div className="form-group">
+                <label className="form-label">Appointment Date</label>
+                <input
+                  type="date"
+                  className="form-input"
+                  value={formData.appointmentDate}
+                  onChange={(e) => setFormData({ ...formData, appointmentDate: e.target.value })}
+                  required
+                />
               </div>
 
               <div className="form-group">

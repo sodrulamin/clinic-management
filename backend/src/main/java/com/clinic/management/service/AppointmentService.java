@@ -26,6 +26,7 @@ public class AppointmentService {
     private final DoctorRepository doctorRepository;
     private final PatientRepository patientRepository;
     private final UserRepository userRepository;
+    private final AppointmentSlotService appointmentSlotService;
 
     public List<Appointment> getAllAppointments(Authentication authentication, LocalDate startDate, LocalDate endDate, Boolean allDates) {
         List<Appointment> list;
@@ -139,11 +140,16 @@ public class AppointmentService {
         Patient patient = patientRepository.findById(request.getPatientId())
                 .orElseThrow(() -> new RuntimeException("Patient not found"));
 
+        String timeSlot = request.getTimeSlot();
+        if (timeSlot == null || timeSlot.isBlank()) {
+            timeSlot = appointmentSlotService.determineNextAvailableSlot(doctor, request.getAppointmentDate());
+        }
+
         Appointment appointment = Appointment.builder()
                 .doctor(doctor)
                 .patient(patient)
                 .appointmentDate(request.getAppointmentDate())
-                .timeSlot(request.getTimeSlot())
+                .timeSlot(timeSlot)
                 .reason(request.getReason())
                 .status(Appointment.AppointmentStatus.SCHEDULED)
                 .build();

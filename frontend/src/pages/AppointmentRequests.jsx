@@ -14,7 +14,6 @@ export const AppointmentRequests = () => {
     patientEmail: '',
     doctorId: '',
     preferredDate: new Date().toISOString().split('T')[0],
-    preferredTime: '10:00 AM',
     reason: '',
   });
 
@@ -52,7 +51,8 @@ export const AppointmentRequests = () => {
       setShowModal(false);
       fetchRequests();
     } catch (err) {
-      alert('Failed to submit appointment request');
+      const msg = err.response?.data?.message || err.message || 'Failed to submit appointment request';
+      alert(msg);
     }
   };
 
@@ -219,29 +219,15 @@ export const AppointmentRequests = () => {
                 </select>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div className="form-group">
-                  <label className="form-label">Preferred Date</label>
-                  <input
-                    type="date"
-                    className="form-input"
-                    value={formData.preferredDate}
-                    onChange={(e) => setFormData({ ...formData, preferredDate: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Preferred Time</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="e.g. 10:30 AM"
-                    value={formData.preferredTime}
-                    onChange={(e) => setFormData({ ...formData, preferredTime: e.target.value })}
-                    required
-                  />
-                </div>
+              <div className="form-group">
+                <label className="form-label">Preferred Date</label>
+                <input
+                  type="date"
+                  className="form-input"
+                  value={formData.preferredDate}
+                  onChange={(e) => setFormData({ ...formData, preferredDate: e.target.value })}
+                  required
+                />
               </div>
 
               <div className="form-group">

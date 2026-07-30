@@ -43,5 +43,9 @@ public class Doctor {
     private String profileImage;
 
     @Builder.Default
+    @Column(nullable = false)
+    private Integer appointmentDurationMinutes = 20;
+
+    @Builder.Default
     private boolean active = true;
 }

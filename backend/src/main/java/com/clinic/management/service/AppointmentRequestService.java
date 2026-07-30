@@ -17,6 +17,7 @@ public class AppointmentRequestService {
     private final DoctorRepository doctorRepository;
     private final PatientRepository patientRepository;
     private final AppointmentRepository appointmentRepository;
+    private final AppointmentSlotService appointmentSlotService;
 
     public List<AppointmentRequest> getAllRequests(AppointmentRequest.RequestStatus status) {
         if (status != null) {
@@ -29,13 +30,18 @@ public class AppointmentRequestService {
         Doctor doctor = doctorRepository.findById(requestDto.getDoctorId())
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
 
+        String preferredTime = requestDto.getPreferredTime();
+        if (preferredTime == null || preferredTime.isBlank()) {
+            preferredTime = appointmentSlotService.determineNextAvailableSlot(doctor, requestDto.getPreferredDate());
+        }
+
         AppointmentRequest request = AppointmentRequest.builder()
                 .patientName(requestDto.getPatientName())
                 .patientPhone(requestDto.getPatientPhone())
                 .patientEmail(requestDto.getPatientEmail())
                 .doctor(doctor)
                 .preferredDate(requestDto.getPreferredDate())
-                .preferredTime(requestDto.getPreferredTime())
+                .preferredTime(preferredTime)
                 .reason(requestDto.getReason())
                 .status(AppointmentRequest.RequestStatus.PENDING)
                 .build();

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/appointment-requests")
@@ -27,7 +28,11 @@ public class AppointmentRequestController {
     @PostMapping
     @PreAuthorize("@securityService.hasAccess('/appointment-requests')")
     public ResponseEntity<?> createRequest(@RequestBody CreateRequestDto requestDto) {
-        return ResponseEntity.ok(requestService.createRequest(requestDto));
+        try {
+            return ResponseEntity.ok(requestService.createRequest(requestDto));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
 
     @PostMapping("/public")

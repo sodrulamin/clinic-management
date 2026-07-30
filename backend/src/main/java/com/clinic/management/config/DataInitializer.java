@@ -115,6 +115,7 @@ public class DataInitializer implements CommandLineRunner {
                     .roomNo("Suite 301")
                     .consultationFee(150.0)
                     .workingHours("Mon-Fri 09:00 - 16:00")
+                    .appointmentDurationMinutes(20)
                     .active(true)
                     .build());
 
@@ -127,6 +128,7 @@ public class DataInitializer implements CommandLineRunner {
                     .roomNo("Suite 405")
                     .consultationFee(180.0)
                     .workingHours("Mon-Thu 10:00 - 17:00")
+                    .appointmentDurationMinutes(30)
                     .active(true)
                     .build());
 
@@ -139,6 +141,7 @@ public class DataInitializer implements CommandLineRunner {
                     .roomNo("Suite 102")
                     .consultationFee(120.0)
                     .workingHours("Tue-Sat 08:30 - 15:30")
+                    .appointmentDurationMinutes(15)
                     .active(true)
                     .build());
 

@@ -45,7 +45,11 @@ public class AppointmentController {
     @PostMapping
     @PreAuthorize("@securityService.hasAccess('/appointments')")
     public ResponseEntity<?> createAppointment(@RequestBody CreateAppointmentRequest request) {
-        return ResponseEntity.ok(appointmentService.createAppointment(request));
+        try {
+            return ResponseEntity.ok(appointmentService.createAppointment(request));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
 
     @PutMapping("/{id}/status")

@@ -33,6 +33,7 @@ export const Doctors = () => {
     roomNo: '',
     consultationFee: 100,
     workingHours: 'Mon-Fri 09:00 - 17:00',
+    appointmentDurationMinutes: 20,
     profileImage: '',
     active: true,
   });
@@ -62,6 +63,7 @@ export const Doctors = () => {
         roomNo: doctor.roomNo || '',
         consultationFee: doctor.consultationFee || 100,
         workingHours: doctor.workingHours || 'Mon-Fri 09:00 - 17:00',
+        appointmentDurationMinutes: doctor.appointmentDurationMinutes || 20,
         profileImage: doctor.profileImage || '',
         active: doctor.active,
       });
@@ -76,6 +78,7 @@ export const Doctors = () => {
         roomNo: '',
         consultationFee: 100,
         workingHours: 'Mon-Fri 09:00 - 17:00',
+        appointmentDurationMinutes: 20,
         profileImage: '',
         active: true,
       });
@@ -163,6 +166,7 @@ export const Doctors = () => {
                 <p><strong>Room:</strong> {doc.roomNo || 'N/A'}</p>
                 <p><strong>Fee:</strong> ${doc.consultationFee}</p>
                 <p><strong>Hours:</strong> {doc.workingHours}</p>
+                <p><strong>Slot Duration:</strong> {doc.appointmentDurationMinutes || 20} mins</p>
                 <p><strong>Contact:</strong> {doc.phone || doc.email}</p>
               </div>
 
@@ -307,14 +311,25 @@ export const Doctors = () => {
                 </div>
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Working Hours / Days</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={formData.workingHours}
-                  onChange={(e) => setFormData({ ...formData, workingHours: e.target.value })}
-                />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="form-group">
+                  <label className="form-label">Working Hours / Days</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={formData.workingHours}
+                    onChange={(e) => setFormData({ ...formData, workingHours: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Appointment Duration (Mins)</label>
+                  <input
+                    type="number"
+                    className="form-input"
+                    value={formData.appointmentDurationMinutes}
+                    onChange={(e) => setFormData({ ...formData, appointmentDurationMinutes: parseInt(e.target.value) || 20 })}
+                  />
+                </div>
               </div>
 
               <div className="modal-footer">

@@ -118,10 +118,12 @@ public class AppointmentService {
                 .filter(a -> a.getStatus() == Appointment.AppointmentStatus.VISITED || a.getStatus() == Appointment.AppointmentStatus.COMPLETED)
                 .toList();
 
-        double defaultFee = (doctor != null && doctor.getConsultationFee() != null) ? doctor.getConsultationFee() : 0.0;
-
         double income = servedApps.stream()
-                .mapToDouble(a -> a.getDoctor() != null && a.getDoctor().getConsultationFee() != null ? a.getDoctor().getConsultationFee() : defaultFee)
+                .mapToDouble(a -> {
+                    double baseFee = (a.getDoctor() != null && a.getDoctor().getConsultationFee() != null) ? a.getDoctor().getConsultationFee() : 0.0;
+                    double disc = (a.getDiscount() != null) ? a.getDiscount() : 0.0;
+                    return Math.max(0.0, baseFee - disc);
+                })
                 .sum();
 
         stats.put("totalAppointments", apps.size());
@@ -157,10 +159,43 @@ public class AppointmentService {
         return appointmentRepository.save(appointment);
     }
 
-    public Appointment updateStatus(Long id, Appointment.AppointmentStatus status) {
+    public Appointment updateStatus(Long id, Appointment.AppointmentStatus status, Authentication authentication) {
+        if (status == Appointment.AppointmentStatus.VISITED) {
+            boolean isDoctor = false;
+            if (authentication != null) {
+                User user = userRepository.findByUsername(authentication.getName()).orElse(null);
+                if (user != null && user.getRole() != null && "ROLE_DOCTOR".equals(user.getRole().getName())) {
+                    isDoctor = true;
+                }
+            }
+            if (!isDoctor) {
+                throw new RuntimeException("Only doctors are allowed to serve patients.");
+            }
+        }
+
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Appointment not found"));
         appointment.setStatus(status);
+        return appointmentRepository.save(appointment);
+    }
+
+    public Appointment updateDiscount(Long id, Double discount, Authentication authentication) {
+        Appointment appointment = appointmentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+
+        if (discount == null || discount < 0) {
+            throw new RuntimeException("Discount amount cannot be negative.");
+        }
+
+        double consultationFee = (appointment.getDoctor() != null && appointment.getDoctor().getConsultationFee() != null)
+                ? appointment.getDoctor().getConsultationFee()
+                : 0.0;
+
+        if (discount > consultationFee) {
+            throw new RuntimeException("Discount cannot exceed consultation fee (৳" + consultationFee + ").");
+        }
+
+        appointment.setDiscount(discount);
         return appointmentRepository.save(appointment);
     }
 

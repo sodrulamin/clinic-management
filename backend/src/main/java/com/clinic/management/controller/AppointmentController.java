@@ -54,8 +54,22 @@ public class AppointmentController {
 
     @PutMapping("/{id}/status")
     @PreAuthorize("@securityService.hasAccess('/appointments')")
-    public ResponseEntity<?> updateStatus(@PathVariable Long id, @RequestParam Appointment.AppointmentStatus status) {
-        return ResponseEntity.ok(appointmentService.updateStatus(id, status));
+    public ResponseEntity<?> updateStatus(@PathVariable Long id, @RequestParam Appointment.AppointmentStatus status, Authentication authentication) {
+        try {
+            return ResponseEntity.ok(appointmentService.updateStatus(id, status, authentication));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{id}/discount")
+    @PreAuthorize("@securityService.hasAccess('/appointments')")
+    public ResponseEntity<?> updateDiscount(@PathVariable Long id, @RequestParam Double discount, Authentication authentication) {
+        try {
+            return ResponseEntity.ok(appointmentService.updateDiscount(id, discount, authentication));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
 
     @PostMapping("/trigger-auto-cancel")

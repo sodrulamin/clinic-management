@@ -1,0 +1,1 @@
+ALTER TABLE appointments ADD COLUMN discount DOUBLE DEFAULT 0.0;

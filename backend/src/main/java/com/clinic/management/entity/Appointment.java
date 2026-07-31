@@ -39,6 +39,10 @@ public class Appointment {
     @Column(columnDefinition = "TEXT")
     private String reason;
 
+    @Builder.Default
+    @Column(nullable = false)
+    private Double discount = 0.0;
+
     private LocalDateTime createdAt;
 
     public enum AppointmentStatus {

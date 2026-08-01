@@ -3,6 +3,8 @@ package com.clinic.management.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "prescriptions")
@@ -29,6 +31,7 @@ public class Prescription {
     @JoinColumn(name = "patient_id", nullable = false)
     private Patient patient;
 
+    /** Legacy free-text diagnosis — kept for backwards compatibility with old prescriptions. */
     @Column(columnDefinition = "TEXT")
     private String diagnosis;
 
@@ -38,6 +41,11 @@ public class Prescription {
     @Column(columnDefinition = "TEXT")
     private String advice;
 
+    /** Structured per-diagnosis list with individual discounts. */
+    @Builder.Default
+    @OneToMany(mappedBy = "prescription", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private List<PrescriptionDiagnosis> prescriptionDiagnoses = new ArrayList<>();
+
     private LocalDateTime createdAt;
 
     @PrePersist
@@ -45,3 +53,4 @@ public class Prescription {
         this.createdAt = LocalDateTime.now(java.time.ZoneId.of("Asia/Dhaka"));
     }
 }
+

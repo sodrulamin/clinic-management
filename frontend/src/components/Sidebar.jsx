@@ -22,7 +22,8 @@ const iconMap = {
   UserPlus,
   Stethoscope,
   Calendar,
-  ClipboardList
+  ClipboardList,
+  Activity
 };
 
 const MIN_WIDTH = 72;

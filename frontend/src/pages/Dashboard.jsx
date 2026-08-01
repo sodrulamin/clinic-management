@@ -82,7 +82,7 @@ export const Dashboard = () => {
           </div>
           <div>
             <div className="stat-value">৳{(stats.todayIncome || 0).toFixed(2)}</div>
-            <div className="stat-label">{isDoctor ? "Today's Visiting Fees" : "Visiting Fees Collected Today"}</div>
+            <div className="stat-label">Visiting Fees</div>
           </div>
         </div>
       </div>

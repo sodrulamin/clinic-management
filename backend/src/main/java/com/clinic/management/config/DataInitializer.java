@@ -61,11 +61,14 @@ public class DataInitializer implements CommandLineRunner {
         Menu mRequests = menuRepository.findByPath("/appointment-requests").orElseGet(() ->
                 menuRepository.save(Menu.builder().title("Appointment Requests").path("/appointment-requests").icon("ClipboardList").sortOrder(7).build()));
 
+        Menu mDiagnoses = menuRepository.findByPath("/diagnoses").orElseGet(() ->
+                menuRepository.save(Menu.builder().title("Diagnoses Config").path("/diagnoses").icon("Activity").sortOrder(8).build()));
+
         // 3. Seed Role-Menu relationships
-        seedRoleMenusIfEmpty(adminRole, List.of(mDashboard, mUsers, mRoleMenus, mPatients, mDoctors, mAppointments, mRequests));
-        seedRoleMenusIfEmpty(doctorRole, List.of(mDashboard, mPatients, mDoctors, mAppointments, mRequests));
-        seedRoleMenusIfEmpty(receptionistRole, List.of(mDashboard, mPatients, mDoctors, mAppointments, mRequests));
-        seedRoleMenusIfEmpty(patientRole, List.of(mDashboard, mDoctors, mAppointments, mRequests));
+        seedRoleMenus(adminRole, List.of(mDashboard, mUsers, mRoleMenus, mPatients, mDoctors, mAppointments, mRequests, mDiagnoses));
+        seedRoleMenus(doctorRole, List.of(mDashboard, mPatients, mDoctors, mAppointments, mRequests, mDiagnoses));
+        seedRoleMenus(receptionistRole, List.of(mDashboard, mPatients, mDoctors, mAppointments, mRequests));
+        seedRoleMenus(patientRole, List.of(mDashboard, mDoctors, mAppointments, mRequests));
 
         // 4. Seed Default Users
         if (!userRepository.existsByUsername("admin")) {
@@ -203,9 +206,9 @@ public class DataInitializer implements CommandLineRunner {
         }
     }
 
-    private void seedRoleMenusIfEmpty(Role role, List<Menu> menus) {
-        if (roleMenuRepository.findByRoleId(role.getId()).isEmpty()) {
-            for (Menu menu : menus) {
+    private void seedRoleMenus(Role role, List<Menu> menus) {
+        for (Menu menu : menus) {
+            if (!roleMenuRepository.existsByRoleIdAndMenuId(role.getId(), menu.getId())) {
                 roleMenuRepository.save(RoleMenu.builder().role(role).menu(menu).build());
             }
         }

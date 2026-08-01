@@ -32,6 +32,8 @@ export const Doctors = () => {
     email: '',
     roomNo: '',
     consultationFee: 100,
+    maxDiscountPercent: 0,
+    maxDiscountFixed: 0,
     workingHours: 'Mon-Fri 09:00 - 17:00',
     appointmentDurationMinutes: 20,
     profileImage: '',
@@ -62,6 +64,8 @@ export const Doctors = () => {
         email: doctor.email || '',
         roomNo: doctor.roomNo || '',
         consultationFee: doctor.consultationFee || 100,
+        maxDiscountPercent: doctor.maxDiscountPercent ?? 0,
+        maxDiscountFixed: doctor.maxDiscountFixed ?? 0,
         workingHours: doctor.workingHours || 'Mon-Fri 09:00 - 17:00',
         appointmentDurationMinutes: doctor.appointmentDurationMinutes || 20,
         profileImage: doctor.profileImage || '',
@@ -77,6 +81,8 @@ export const Doctors = () => {
         email: '',
         roomNo: '',
         consultationFee: 100,
+        maxDiscountPercent: 0,
+        maxDiscountFixed: 0,
         workingHours: 'Mon-Fri 09:00 - 17:00',
         appointmentDurationMinutes: 20,
         profileImage: '',
@@ -104,10 +110,15 @@ export const Doctors = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const payload = {
+        ...formData,
+        maxDiscountPercent: formData.maxDiscountPercent === '' ? 0 : Number(formData.maxDiscountPercent),
+        maxDiscountFixed: formData.maxDiscountFixed === '' ? 0 : Number(formData.maxDiscountFixed),
+      };
       if (editingDoctor) {
-        await api.put(`/doctors/${editingDoctor.id}`, formData);
+        await api.put(`/doctors/${editingDoctor.id}`, payload);
       } else {
-        await api.post('/doctors', formData);
+        await api.post('/doctors', payload);
       }
       setShowModal(false);
       fetchDoctors();
@@ -165,6 +176,7 @@ export const Doctors = () => {
                 <p><strong>Qualification:</strong> {doc.qualification || 'N/A'}</p>
                 <p><strong>Room:</strong> {doc.roomNo || 'N/A'}</p>
                 <p><strong>Fee:</strong> ৳{doc.consultationFee}</p>
+                <p><strong>Max Discount Auth:</strong> {doc.maxDiscountPercent || 0}% / ৳{doc.maxDiscountFixed || 0}</p>
                 <p><strong>Hours:</strong> {doc.workingHours}</p>
                 <p><strong>Slot Duration:</strong> {doc.appointmentDurationMinutes || 20} mins</p>
                 <p><strong>Contact:</strong> {doc.phone || doc.email}</p>
@@ -310,6 +322,45 @@ export const Doctors = () => {
                   />
                 </div>
               </div>
+
+              {/* Discount caps — admin only */}
+              {isAdmin && (
+                <div style={{ backgroundColor: 'var(--table-header-bg)', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '4px' }}>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Max Diagnosis Discount Authority
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label">Max Discount (%)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="any"
+                        className="form-input"
+                        placeholder="e.g. 20"
+                        value={formData.maxDiscountPercent}
+                        onChange={(e) => setFormData({ ...formData, maxDiscountPercent: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label">Max Discount (৳)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        className="form-input"
+                        placeholder="e.g. 500"
+                        value={formData.maxDiscountFixed}
+                        onChange={(e) => setFormData({ ...formData, maxDiscountFixed: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '6px' }}>
+                    Set to 0 to disallow discounts. Doctor can apply up to the maximum on any single diagnosis.
+                  </div>
+                </div>
+              )}
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div className="form-group">

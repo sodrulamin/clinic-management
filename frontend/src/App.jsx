@@ -12,6 +12,8 @@ import { Patients } from './pages/Patients';
 import { Doctors } from './pages/Doctors';
 import { Appointments } from './pages/Appointments';
 import { AppointmentRequests } from './pages/AppointmentRequests';
+import { Diagnoses } from './pages/Diagnoses';
+import { WritePrescription } from './pages/WritePrescription';
 
 export default function App() {
   return (
@@ -46,8 +48,16 @@ export default function App() {
               <Route path="/appointments" element={<Appointments />} />
             </Route>
 
+            <Route element={<ProtectedRoute pageTitle="Patient Prescription Form" />}>
+              <Route path="/prescriptions/write/:appointmentId" element={<WritePrescription />} />
+            </Route>
+
             <Route element={<ProtectedRoute pageTitle="Appointment Request Review" />}>
               <Route path="/appointment-requests" element={<AppointmentRequests />} />
+            </Route>
+
+            <Route element={<ProtectedRoute pageTitle="Diagnoses Master List" />}>
+              <Route path="/diagnoses" element={<Diagnoses />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/dashboard" replace />} />

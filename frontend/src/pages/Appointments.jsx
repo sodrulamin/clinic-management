@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import {
@@ -14,10 +15,14 @@ import {
   FileText,
   Printer,
   Pill,
-  Edit3
+  Edit3,
+  PlusCircle,
+  AlertCircle,
+  Tag
 } from 'lucide-react';
 
 export const Appointments = () => {
+  const navigate = useNavigate();
   const { user } = useContext(AuthContext);
   const isDoctor = user?.role === 'ROLE_DOCTOR';
 
@@ -28,6 +33,7 @@ export const Appointments = () => {
   const [appointments, setAppointments] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [patients, setPatients] = useState([]);
+  const [diagnosesList, setDiagnosesList] = useState([]);
   const [stats, setStats] = useState({
     todayAppointments: 0,
     todayVisited: 0,
@@ -43,6 +49,7 @@ export const Appointments = () => {
   const [activePrescription, setActivePrescription] = useState(null);
   const [loadingRx, setLoadingRx] = useState(false);
 
+  // Booking form
   const [formData, setFormData] = useState({
     doctorId: '',
     patientId: '',
@@ -50,12 +57,81 @@ export const Appointments = () => {
     reason: '',
   });
 
+  // Prescription form state
   const [prescriptionForm, setPrescriptionForm] = useState({
-    diagnosis: '',
     medicines: '',
     advice: '',
-    discount: 0,
+    discount: 0,     // visiting fee discount
+    diagnoses: [],   // array of { diagnosisId, customName, discountType, discountValue, _price, _netPrice, _error }
   });
+
+  // ─── Diagnosis row helpers ──────────────────────────────────────────────────
+
+  const emptyDiagnosisRow = () => ({
+    _key: Math.random().toString(36).slice(2),
+    diagnosisId: '',
+    customName: '',
+    discountType: 'NONE',
+    discountValue: 0,
+    _price: 0,
+    _netPrice: 0,
+    _error: '',
+  });
+
+  const computeRowNet = (row) => {
+    const price = parseFloat(row._price) || 0;
+    const val = parseFloat(row.discountValue) || 0;
+    if (row.discountType === 'PERCENT') return Math.max(0, price - price * val / 100);
+    if (row.discountType === 'FIXED') return Math.max(0, price - val);
+    return price;
+  };
+
+  const validateRow = (row, doctor) => {
+    const val = parseFloat(row.discountValue) || 0;
+    if (row.discountType === 'PERCENT') {
+      const max = doctor?.maxDiscountPercent ?? 0;
+      if (val > max) return `Max allowed: ${max}%`;
+    } else if (row.discountType === 'FIXED') {
+      const max = doctor?.maxDiscountFixed ?? 0;
+      if (val > max) return `Max allowed: ৳${max}`;
+    }
+    return '';
+  };
+
+  const updateDiagnosisRow = (key, patch, doctor) => {
+    setPrescriptionForm((prev) => {
+      const rows = prev.diagnoses.map((r) => {
+        if (r._key !== key) return r;
+        const updated = { ...r, ...patch };
+        // auto-fill price if a master diagnosis is selected
+        if (patch.diagnosisId !== undefined) {
+          const found = diagnosesList.find((d) => String(d.id) === String(patch.diagnosisId));
+          updated._price = found ? (found.price || 0) : 0;
+          updated.customName = '';
+        }
+        updated._netPrice = computeRowNet(updated);
+        updated._error = validateRow(updated, doctor);
+        return updated;
+      });
+      return { ...prev, diagnoses: rows };
+    });
+  };
+
+  const addDiagnosisRow = () => {
+    setPrescriptionForm((prev) => ({
+      ...prev,
+      diagnoses: [...prev.diagnoses, emptyDiagnosisRow()],
+    }));
+  };
+
+  const removeDiagnosisRow = (key) => {
+    setPrescriptionForm((prev) => ({
+      ...prev,
+      diagnoses: prev.diagnoses.filter((r) => r._key !== key),
+    }));
+  };
+
+  // ─── Data fetching ──────────────────────────────────────────────────────────
 
   const fetchData = async () => {
     try {
@@ -71,15 +147,17 @@ export const Appointments = () => {
         statsUrl += `?${params.toString()}`;
       }
 
-      const [appRes, docRes, patRes, statsRes] = await Promise.all([
+      const [appRes, docRes, patRes, statsRes, diagRes] = await Promise.all([
         api.get(appUrl),
         api.get('/doctors'),
         api.get('/patients'),
         api.get(statsUrl),
+        api.get('/diagnoses/active').catch(() => ({ data: [] })),
       ]);
       setAppointments(appRes.data);
       setDoctors(docRes.data);
       setPatients(patRes.data);
+      setDiagnosesList(diagRes.data || []);
       if (statsRes.data) {
         setStats(statsRes.data);
       }
@@ -94,6 +172,8 @@ export const Appointments = () => {
   useEffect(() => {
     fetchData();
   }, [startDate, endDate]);
+
+  // ─── Booking ────────────────────────────────────────────────────────────────
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -127,44 +207,82 @@ export const Appointments = () => {
     }
   };
 
-  // Serve & Write / Edit Prescription Handlers
+  // ─── Serve / Edit Prescription ──────────────────────────────────────────────
+
   const openServeModal = async (app) => {
     setServingAppointment(app);
-    let diagnosis = app.reason || '';
+
     let medicines = '';
     let advice = '';
     let discount = app.discount || 0;
+    let diagnoses = []; // default: no rows (empty state)
 
     if (app.status === 'VISITED' || app.status === 'COMPLETED') {
       try {
         const res = await api.get(`/prescriptions/appointment/${app.id}`);
         if (res.data) {
-          diagnosis = res.data.diagnosis || diagnosis;
           medicines = res.data.medicines || '';
           advice = res.data.advice || '';
           discount = app.discount !== undefined ? app.discount : (res.data.appointment?.discount || 0);
+
+          // Re-hydrate structured diagnoses if present
+          if (res.data.prescriptionDiagnoses && res.data.prescriptionDiagnoses.length > 0) {
+            diagnoses = res.data.prescriptionDiagnoses.map((pd) => ({
+              _key: Math.random().toString(36).slice(2),
+              diagnosisId: pd.diagnosis?.id ? String(pd.diagnosis.id) : '',
+              customName: pd.customName || '',
+              discountType: pd.discountType || 'NONE',
+              discountValue: pd.discountValue || 0,
+              _price: pd.diagnosisPrice || 0,
+              _netPrice: pd.netPrice || 0,
+              _error: '',
+            }));
+          } else if (res.data.diagnosis) {
+            // Legacy: old free-text prescription
+            diagnoses = [{
+              _key: Math.random().toString(36).slice(2),
+              diagnosisId: '',
+              customName: res.data.diagnosis,
+              discountType: 'NONE',
+              discountValue: 0,
+              _price: 0,
+              _netPrice: 0,
+              _error: '',
+            }];
+          }
         }
       } catch (err) {
         console.error('No existing prescription found to prefill', err);
       }
     }
 
-    setPrescriptionForm({
-      diagnosis,
-      medicines,
-      advice,
-      discount,
-    });
+    setPrescriptionForm({ medicines, advice, discount, diagnoses });
     setShowServeModal(true);
   };
+
+  const hasDiscountErrors = () =>
+    prescriptionForm.diagnoses.some((r) => r._error);
 
   const handlePrescriptionSubmit = async (e) => {
     e.preventDefault();
     if (!servingAppointment) return;
+    if (hasDiscountErrors()) {
+      alert('Please fix discount errors before submitting.');
+      return;
+    }
     try {
+      const diagnosesPayload = prescriptionForm.diagnoses
+        .filter((r) => r.diagnosisId || r.customName.trim())
+        .map((r) => ({
+          diagnosisId: r.diagnosisId ? parseInt(r.diagnosisId) : null,
+          customName: r.diagnosisId ? null : r.customName.trim(),
+          discountType: r.discountType,
+          discountValue: parseFloat(r.discountValue) || 0,
+        }));
+
       await api.post('/prescriptions', {
         appointmentId: servingAppointment.id,
-        diagnosis: prescriptionForm.diagnosis,
+        diagnoses: diagnosesPayload,
         medicines: prescriptionForm.medicines,
         advice: prescriptionForm.advice,
         discount: Number(prescriptionForm.discount) || 0,
@@ -176,7 +294,8 @@ export const Appointments = () => {
     }
   };
 
-  // Format Prescription Creation Time (Local Time)
+  // ─── Helpers ────────────────────────────────────────────────────────────────
+
   const formatPrescriptionTime = (dateTimeStr) => {
     if (!dateTimeStr) return 'N/A';
     try {
@@ -185,15 +304,13 @@ export const Appointments = () => {
         const date = new Date(year, month - 1, day, hour, minute, second || 0);
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
       }
-      const isoStr = String(dateTimeStr);
-      const date = new Date(isoStr);
+      const date = new Date(String(dateTimeStr));
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
     } catch (e) {
       return dateTimeStr;
     }
   };
 
-  // View Prescription Handler
   const handleViewPrescription = async (app) => {
     setLoadingRx(true);
     setShowViewRxModal(true);
@@ -209,45 +326,43 @@ export const Appointments = () => {
     }
   };
 
+  // Total net diagnosis cost
+  const getTotalDiagnosisCost = (rx) => {
+    if (!rx?.prescriptionDiagnoses?.length) return null;
+    return rx.prescriptionDiagnoses.reduce((sum, pd) => sum + (pd.netPrice || 0), 0);
+  };
+
+  // ─── Render ─────────────────────────────────────────────────────────────────
+
   return (
     <div>
-      {/* Metrics & Income Summary Bar */}
+      {/* Stats Bar */}
       <div className="stats-grid" style={{ marginBottom: '20px' }}>
         <div className="stat-card">
-          <div className="stat-icon teal">
-            <Calendar />
-          </div>
+          <div className="stat-icon teal"><Calendar /></div>
           <div>
             <div className="stat-value">{stats.todayAppointments}</div>
             <div className="stat-label">
-              {!startDate && !endDate ? "Total Appointments" : (startDate === endDate ? "Appointments Today" : "Appointments in Range")}
+              {!startDate && !endDate ? 'Total Appointments' : startDate === endDate ? 'Appointments Today' : 'Appointments in Range'}
             </div>
           </div>
         </div>
-
         <div className="stat-card">
-          <div className="stat-icon success">
-            <UserCheck />
-          </div>
+          <div className="stat-icon success"><UserCheck /></div>
           <div>
             <div className="stat-value">{stats.todayVisited}</div>
             <div className="stat-label">
-              {!startDate && !endDate ? "Total Patients Served" : (startDate === endDate ? "Patients Served Today" : "Patients Served in Range")}
+              {!startDate && !endDate ? 'Total Patients Served' : startDate === endDate ? 'Patients Served Today' : 'Patients Served in Range'}
             </div>
           </div>
         </div>
-
         <div className="stat-card">
           <div className="stat-icon warning" style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b' }}>
             <DollarSign />
           </div>
           <div>
             <div className="stat-value">৳{(stats.todayIncome || 0).toFixed(2)}</div>
-            <div className="stat-label">
-              {isDoctor
-                ? (!startDate && !endDate ? "Total Income" : (startDate === endDate ? "Today's Income" : "Income in Range"))
-                : (!startDate && !endDate ? "Total Clinic Income" : (startDate === endDate ? "Clinic Income Today" : "Clinic Income in Range"))}
-            </div>
+            <div className="stat-label">Visiting Fees</div>
           </div>
         </div>
       </div>
@@ -259,30 +374,14 @@ export const Appointments = () => {
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', backgroundColor: 'var(--bg-muted, rgba(0,0,0,0.03))', padding: '4px 10px', borderRadius: '8px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 500 }}>From:</label>
-                <input
-                  type="date"
-                  className="form-input"
-                  style={{ width: 'auto', padding: '4px 8px', fontSize: '0.82rem' }}
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
+                <input type="date" className="form-input" style={{ width: 'auto', padding: '4px 8px', fontSize: '0.82rem' }} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 500 }}>To:</label>
-                <input
-                  type="date"
-                  className="form-input"
-                  style={{ width: 'auto', padding: '4px 8px', fontSize: '0.82rem' }}
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
+                <input type="date" className="form-input" style={{ width: 'auto', padding: '4px 8px', fontSize: '0.82rem' }} value={endDate} onChange={(e) => setEndDate(e.target.value)} />
               </div>
               {(startDate || endDate) && (
-                <button
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => { setStartDate(''); setEndDate(''); }}
-                  style={{ padding: '4px 8px', fontSize: '0.78rem' }}
-                >
+                <button className="btn btn-secondary btn-sm" onClick={() => { setStartDate(''); setEndDate(''); }} style={{ padding: '4px 8px', fontSize: '0.78rem' }}>
                   All Dates
                 </button>
               )}
@@ -351,41 +450,24 @@ export const Appointments = () => {
                       {app.status === 'SCHEDULED' && (
                         <>
                           {isDoctor && (
-                            <button
-                              className="btn btn-primary btn-sm"
-                              title="Serve Patient & Write Prescription"
-                              onClick={() => openServeModal(app)}
-                            >
+                            <button className="btn btn-primary btn-sm" title="Serve Patient & Write Prescription" onClick={() => navigate(`/prescriptions/write/${app.id}`)}>
                               <Stethoscope size={14} />
                               <span>Serve & Write Rx</span>
                             </button>
                           )}
-                          <button
-                            className="btn btn-secondary btn-sm"
-                            title="Mark Cancelled"
-                            onClick={() => handleUpdateStatus(app.id, 'CANCELLED')}
-                          >
+                          <button className="btn btn-secondary btn-sm" title="Mark Cancelled" onClick={() => handleUpdateStatus(app.id, 'CANCELLED')}>
                             <XCircle size={14} color="#ef4444" />
                           </button>
                         </>
                       )}
                       {(app.status === 'VISITED' || app.status === 'COMPLETED') && (
                         <>
-                          <button
-                            className="btn btn-secondary btn-sm"
-                            title="View Prescription"
-                            onClick={() => handleViewPrescription(app)}
-                          >
+                          <button className="btn btn-secondary btn-sm" title="View Prescription" onClick={() => handleViewPrescription(app)}>
                             <FileText size={14} color="var(--primary)" />
                             <span>View Rx</span>
                           </button>
                           {isDoctor && (
-                            <button
-                              className="btn btn-secondary btn-sm"
-                              title="Edit Prescription"
-                              style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
-                              onClick={() => openServeModal(app)}
-                            >
+                            <button className="btn btn-secondary btn-sm" title="Edit Prescription" style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }} onClick={() => navigate(`/prescriptions/write/${app.id}`)}>
                               <Edit3 size={14} />
                               <span>Edit Rx</span>
                             </button>
@@ -406,52 +488,29 @@ export const Appointments = () => {
         </div>
       </div>
 
-      {/* Booking Modal */}
+      {/* ─── Booking Modal ─────────────────────────────────────────────────── */}
       {showModal && (
         <div className="modal-backdrop">
           <div className="modal-content">
             <div className="modal-header">
               <h3>Book Appointment</h3>
-              <button className="modal-close-btn" onClick={() => setShowModal(false)}>
-                <X size={18} />
-              </button>
+              <button className="modal-close-btn" onClick={() => setShowModal(false)}><X size={18} /></button>
             </div>
-
             <form onSubmit={handleSubmit}>
               <div className="form-group">
                 <label className="form-label">Select Patient</label>
-                <select
-                  className="form-select"
-                  value={formData.patientId}
-                  onChange={(e) => setFormData({ ...formData, patientId: e.target.value })}
-                  required
-                >
+                <select className="form-select" value={formData.patientId} onChange={(e) => setFormData({ ...formData, patientId: e.target.value })} required>
                   <option value="">-- Choose Patient --</option>
-                  {patients.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.fullName} ({p.phone})
-                    </option>
-                  ))}
+                  {patients.map((p) => (<option key={p.id} value={p.id}>{p.fullName} ({p.phone})</option>))}
                 </select>
               </div>
-
               <div className="form-group">
                 <label className="form-label">Select Doctor</label>
-                <select
-                  className="form-select"
-                  value={formData.doctorId}
-                  onChange={(e) => setFormData({ ...formData, doctorId: e.target.value })}
-                  required
-                >
+                <select className="form-select" value={formData.doctorId} onChange={(e) => setFormData({ ...formData, doctorId: e.target.value })} required>
                   <option value="">-- Choose Doctor --</option>
-                  {doctors.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.fullName} - {d.specialization} (৳{d.consultationFee})
-                    </option>
-                  ))}
+                  {doctors.map((d) => (<option key={d.id} value={d.id}>{d.fullName} - {d.specialization} (৳{d.consultationFee})</option>))}
                 </select>
               </div>
-
               <div className="form-group">
                 <label className="form-label">Appointment Date</label>
                 <input
@@ -486,123 +545,7 @@ export const Appointments = () => {
         </div>
       )}
 
-      {/* Serve Patient & Write Prescription Modal */}
-      {showServeModal && servingAppointment && (
-        <div className="modal-backdrop">
-          <div className="modal-content" style={{ maxWidth: '650px' }}>
-            <div className="modal-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Stethoscope size={22} color="var(--primary)" />
-                <h3 style={{ margin: 0 }}>
-                  {(servingAppointment.status === 'VISITED' || servingAppointment.status === 'COMPLETED')
-                    ? 'Edit Prescription'
-                    : 'Serve Patient & Write Prescription'}
-                </h3>
-              </div>
-              <button className="modal-close-btn" onClick={() => setShowServeModal(false)}>
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Patient Header Summary */}
-            <div style={{ backgroundColor: 'var(--primary-light)', padding: '12px 16px', borderRadius: '10px', marginBottom: '20px', fontSize: '0.9rem', borderLeft: '4px solid var(--primary)' }}>
-              <div><strong>Patient:</strong> {servingAppointment.patient?.fullName} ({servingAppointment.patient?.gender || 'N/A'}, {servingAppointment.patient?.age ? `${servingAppointment.patient.age} yrs` : 'N/A'})</div>
-              <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                Date: {servingAppointment.appointmentDate} | Slot: {servingAppointment.timeSlot} | Consultation Fee: ৳{servingAppointment.doctor?.consultationFee}
-              </div>
-            </div>
-
-            <form onSubmit={handlePrescriptionSubmit}>
-              {/* Fee & Discount Section */}
-              <div className="form-group" style={{ backgroundColor: 'var(--table-header-bg)', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '18px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <label className="form-label" style={{ margin: 0, fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <DollarSign size={16} color="var(--primary)" />
-                    <span>Visiting Fee & Discount</span>
-                  </label>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                    Standard Fee: <strong>৳{servingAppointment.doctor?.consultationFee || 0}</strong>
-                  </span>
-                </div>
-                <div style={{ display: 'flex', gap: '14px', alignItems: 'center', flexWrap: 'wrap' }}>
-                  <div style={{ flex: '1 1 180px' }}>
-                    <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px', fontWeight: 600 }}>Discount Amount (৳)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      max={servingAppointment.doctor?.consultationFee || 99999}
-                      step="any"
-                      className="form-input"
-                      placeholder="0"
-                      value={prescriptionForm.discount}
-                      onChange={(e) => setPrescriptionForm({ ...prescriptionForm, discount: e.target.value })}
-                    />
-                  </div>
-                  <div style={{ flex: '1 1 180px', backgroundColor: 'var(--primary-light)', padding: '8px 14px', borderRadius: '8px', textAlign: 'right', border: '1px solid rgba(13, 148, 136, 0.2)' }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', fontWeight: 500 }}>Net Visiting Fee Collected</span>
-                    <strong style={{ fontSize: '1.2rem', color: 'var(--primary)' }}>
-                      ৳{Math.max(0, (servingAppointment.doctor?.consultationFee || 0) - (Number(prescriptionForm.discount) || 0)).toFixed(2)}
-                    </strong>
-                  </div>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Diagnosis / Symptoms</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="e.g. Acute Pharyngitis, Mild Fever"
-                  value={prescriptionForm.diagnosis}
-                  onChange={(e) => setPrescriptionForm({ ...prescriptionForm, diagnosis: e.target.value })}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Pill size={16} color="var(--primary)" />
-                  <span>Prescribed Medicines & Dosage *</span>
-                </label>
-                <textarea
-                  className="form-textarea"
-                  rows="5"
-                  placeholder={"1. Tab. Napa 500mg - 1 + 0 + 1 (After meal) - 5 days\n2. Syr. Histacin 5ml - 0 + 0 + 1 (Bedtime) - 3 days"}
-                  value={prescriptionForm.medicines}
-                  onChange={(e) => setPrescriptionForm({ ...prescriptionForm, medicines: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Special Advice & Follow-up Instructions</label>
-                <textarea
-                  className="form-textarea"
-                  rows="3"
-                  placeholder="e.g. Gargle with warm salt water. Drink plenty of fluids. Follow up after 7 days if symptoms persist."
-                  value={prescriptionForm.advice}
-                  onChange={(e) => setPrescriptionForm({ ...prescriptionForm, advice: e.target.value })}
-                />
-              </div>
-
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowServeModal(false)}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  <CheckCircle size={16} />
-                  <span>
-                    {(servingAppointment.status === 'VISITED' || servingAppointment.status === 'COMPLETED')
-                      ? 'Save Changes'
-                      : 'Submit Prescription & Mark Visited'}
-                  </span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* View Prescription Modal */}
+      {/* ─── View Prescription Modal ────────────────────────────────────────── */}
       {showViewRxModal && (
         <div className="modal-backdrop">
           <div className="modal-content prescription-modal-content" style={{ maxWidth: '720px', padding: '36px' }}>
@@ -616,16 +559,14 @@ export const Appointments = () => {
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Official Medical Prescription Record</span>
                 </div>
               </div>
-              <button className="modal-close-btn no-print" onClick={() => setShowViewRxModal(false)}>
-                <X size={18} />
-              </button>
+              <button className="modal-close-btn no-print" onClick={() => setShowViewRxModal(false)}><X size={18} /></button>
             </div>
 
             {loadingRx ? (
               <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading prescription details...</div>
             ) : activePrescription ? (
               <div id="printable-prescription">
-                {/* Print Header (Visible only on print/download) */}
+                {/* Print Header */}
                 <div className="print-only-header" style={{ display: 'none', borderBottom: '3px solid #0d9488', paddingBottom: '16px', marginBottom: '24px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
@@ -639,7 +580,7 @@ export const Appointments = () => {
                   </div>
                 </div>
 
-                {/* Doctor Header Block */}
+                {/* Doctor header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', paddingBottom: '10px', borderBottom: '1px dashed var(--border-color)' }}>
                   <div>
                     <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary)', margin: '0 0 4px 0' }}>{activePrescription.doctor?.fullName}</h4>
@@ -652,33 +593,70 @@ export const Appointments = () => {
                   </div>
                 </div>
 
-                {/* Patient Bar */}
+                {/* Patient bar */}
                 <div style={{ backgroundColor: 'var(--table-header-bg)', padding: '10px 14px', borderRadius: '8px', marginBottom: '12px', fontSize: '0.88rem', display: 'flex', justifyContent: 'space-between', border: '1px solid var(--border-color)' }}>
                   <div><strong>Patient Name:</strong> {activePrescription.patient?.fullName}</div>
                   <div><strong>Age / Gender:</strong> {activePrescription.patient?.age ? `${activePrescription.patient.age} yrs` : 'N/A'} / {activePrescription.patient?.gender || 'N/A'}</div>
                   <div><strong>Phone:</strong> {activePrescription.patient?.phone || 'N/A'}</div>
                 </div>
 
-                {/* Visiting Fee & Discount Summary Bar */}
-                <div style={{ padding: '8px 14px', borderRadius: '8px', marginBottom: '16px', fontSize: '0.82rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--primary-light)', border: '1px solid rgba(13, 148, 136, 0.2)' }}>
-                  <div>Consultation Fee: <strong>৳{activePrescription.doctor?.consultationFee ? activePrescription.doctor.consultationFee.toFixed(2) : '0.00'}</strong></div>
-                  {activePrescription.appointment?.discount > 0 && (
-                    <div style={{ color: '#d97706', fontWeight: 600 }}>Discount: <strong>-৳{activePrescription.appointment.discount.toFixed(2)}</strong></div>
-                  )}
-                  <div>Net Visiting Fee Paid: <strong style={{ color: 'var(--primary)', fontSize: '0.95rem' }}>৳{Math.max(0, (activePrescription.doctor?.consultationFee || 0) - (activePrescription.appointment?.discount || 0)).toFixed(2)}</strong></div>
-                </div>
 
-                {/* Diagnosis Section */}
-                {activePrescription.diagnosis && (
+                {/* ── Diagnoses Table (structured) ── */}
+                {activePrescription.prescriptionDiagnoses && activePrescription.prescriptionDiagnoses.length > 0 ? (
+                  <div style={{ marginBottom: '16px' }}>
+                    <h5 style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Diagnoses & Prescribed Tests</h5>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.86rem' }}>
+                      <thead>
+                        <tr style={{ backgroundColor: 'var(--table-header-bg)' }}>
+                          <th style={{ textAlign: 'left', padding: '7px 10px', borderBottom: '1px solid var(--border-color)', fontWeight: 700, width: '40px' }}>#</th>
+                          <th style={{ textAlign: 'left', padding: '7px 10px', borderBottom: '1px solid var(--border-color)', fontWeight: 700 }}>Diagnosis</th>
+                          {activePrescription.prescriptionDiagnoses.some((pd) => pd.discountType !== 'NONE') && (
+                            <th style={{ textAlign: 'right', padding: '7px 10px', borderBottom: '1px solid var(--border-color)', fontWeight: 700, width: '180px' }}>Discount</th>
+                          )}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {activePrescription.prescriptionDiagnoses.map((pd, i) => {
+                          const hasDiscount = pd.discountType !== 'NONE';
+                          const discountDisplay =
+                            pd.discountType === 'PERCENT' ? `${pd.discountValue}% Discount`
+                            : pd.discountType === 'FIXED'   ? `৳${pd.discountValue.toFixed(2)} Discount`
+                            : '—';
+                          const diagName = pd.diagnosis
+                            ? pd.diagnosis.name + (pd.diagnosis.code ? ` (${pd.diagnosis.code})` : '')
+                            : pd.customName || 'N/A';
+                          return (
+                            <tr key={pd.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                              <td style={{ padding: '7px 10px', color: 'var(--text-muted)' }}>{i + 1}</td>
+                              <td style={{ padding: '7px 10px', fontWeight: 600 }}>{diagName}</td>
+                              {activePrescription.prescriptionDiagnoses.some((p) => p.discountType !== 'NONE') && (
+                                <td style={{ padding: '7px 10px', textAlign: 'right', color: hasDiscount ? '#d97706' : 'var(--text-muted)', fontWeight: hasDiscount ? 600 : 400 }}>
+                                  {discountDisplay}
+                                </td>
+                              )}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                    {/* Discount note */}
+                    {activePrescription.prescriptionDiagnoses.some((pd) => pd.discountType !== 'NONE') && (
+                      <div style={{ fontSize: '0.75rem', color: '#d97706', fontStyle: 'italic', marginTop: '6px', padding: '4px 8px', backgroundColor: 'rgba(245,158,11,0.07)', borderRadius: '4px', border: '1px solid rgba(245,158,11,0.2)' }}>
+                        ★ Discounts are applicable only if the above diagnoses are performed within this centre.
+                      </div>
+                    )}
+                  </div>
+                ) : activePrescription.diagnosis ? (
+                  /* Legacy: show old free-text diagnosis */
                   <div style={{ marginBottom: '14px' }}>
                     <h5 style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>Diagnosis</h5>
                     <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)', backgroundColor: 'var(--primary-light)', padding: '6px 12px', borderRadius: '6px', display: 'inline-block' }}>
                       {activePrescription.diagnosis}
                     </div>
                   </div>
-                )}
+                ) : null}
 
-                {/* Rx Medicines Section */}
+                {/* Medicines */}
                 <div style={{ marginBottom: '18px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                     <span style={{ fontSize: '1.6rem', fontWeight: 900, fontFamily: 'serif', color: 'var(--primary)' }}>Rx</span>
@@ -689,7 +667,7 @@ export const Appointments = () => {
                   </div>
                 </div>
 
-                {/* Advice Section */}
+                {/* Advice */}
                 <div style={{ marginBottom: '20px' }}>
                   <h5 style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>Advice & Instructions</h5>
                   <div style={{ fontSize: '0.88rem', color: 'var(--text-main)', fontStyle: 'italic', backgroundColor: 'var(--table-header-bg)', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
@@ -697,11 +675,9 @@ export const Appointments = () => {
                   </div>
                 </div>
 
-                {/* Doctor Signature Block (Visible on print) */}
+                {/* Signature */}
                 <div className="prescription-signature-block" style={{ marginTop: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', paddingTop: '16px' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    Generated by CarePulse Medical System
-                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Generated by CarePulse Medical System</div>
                   <div style={{ textAlign: 'center' }}>
                     <div style={{ borderBottom: '1.5px solid var(--text-main)', width: '180px', marginBottom: '4px' }}></div>
                     <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-main)' }}>{activePrescription.doctor?.fullName}</div>
@@ -709,20 +685,17 @@ export const Appointments = () => {
                   </div>
                 </div>
 
-                {/* Modal Footer Actions (Hidden when printing) */}
+                {/* Footer actions */}
                 <div className="modal-footer no-print" style={{ marginTop: '28px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
-                  <button type="button" className="btn btn-secondary" onClick={() => setShowViewRxModal(false)}>
-                    Close
-                  </button>
+                  <button type="button" className="btn btn-secondary" onClick={() => setShowViewRxModal(false)}>Close</button>
                   {isDoctor && (
                     <button
-                      type="button"
-                      className="btn btn-secondary"
+                      type="button" className="btn btn-secondary"
                       style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
                       onClick={() => {
-                        const targetApp = activePrescription.appointment || servingAppointment;
+                        const targetApp = activePrescription.appointment;
                         setShowViewRxModal(false);
-                        if (targetApp) openServeModal(targetApp);
+                        if (targetApp?.id) navigate(`/prescriptions/write/${targetApp.id}`);
                       }}
                     >
                       <Edit3 size={16} />

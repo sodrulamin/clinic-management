@@ -32,6 +32,14 @@ public class AppointmentController {
         return ResponseEntity.ok(appointmentService.getAllAppointments(authentication, startDate, endDate, allDates));
     }
 
+    @GetMapping("/{id}")
+    @PreAuthorize("@securityService.hasAccess('/appointments')")
+    public ResponseEntity<?> getAppointmentById(@PathVariable Long id) {
+        return appointmentService.getAppointmentById(id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/stats")
     @PreAuthorize("@securityService.hasAccess('/appointments')")
     public ResponseEntity<Map<String, Object>> getStats(

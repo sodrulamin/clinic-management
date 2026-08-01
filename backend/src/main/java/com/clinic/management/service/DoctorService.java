@@ -64,6 +64,14 @@ public class DoctorService {
         doctor.setEmail(updatedDoctor.getEmail());
         doctor.setRoomNo(updatedDoctor.getRoomNo());
         doctor.setConsultationFee(updatedDoctor.getConsultationFee());
+        if (isAdmin) {
+            if (updatedDoctor.getMaxDiscountPercent() != null) {
+                doctor.setMaxDiscountPercent(updatedDoctor.getMaxDiscountPercent());
+            }
+            if (updatedDoctor.getMaxDiscountFixed() != null) {
+                doctor.setMaxDiscountFixed(updatedDoctor.getMaxDiscountFixed());
+            }
+        }
         doctor.setWorkingHours(updatedDoctor.getWorkingHours());
         doctor.setProfileImage(updatedDoctor.getProfileImage());
         doctor.setActive(updatedDoctor.isActive());

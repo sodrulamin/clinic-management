@@ -36,6 +36,14 @@ public class Doctor {
 
     private Double consultationFee;
 
+    @Builder.Default
+    @Column(nullable = false)
+    private Double maxDiscountPercent = 0.0;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Double maxDiscountFixed = 0.0;
+
     @Column(length = 100)
     private String workingHours; // e.g. Mon-Fri 09:00 - 17:00
 

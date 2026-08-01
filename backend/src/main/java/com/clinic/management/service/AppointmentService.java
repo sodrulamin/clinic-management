@@ -72,6 +72,10 @@ public class AppointmentService {
         return list;
     }
 
+    public java.util.Optional<Appointment> getAppointmentById(Long id) {
+        return appointmentRepository.findById(id);
+    }
+
     public Map<String, Object> getStats(Authentication authentication, LocalDate startDate, LocalDate endDate, Boolean allDates) {
         Map<String, Object> stats = new HashMap<>();
 

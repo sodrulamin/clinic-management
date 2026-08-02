@@ -336,10 +336,8 @@ export const WritePrescription = () => {
               Doctor: <strong>{doctor?.fullName}</strong> ({doctor?.specialization})
             </div>
           </div>
-        </div>
-
-        <form onSubmit={handleSubmit}>
-          {/* Visiting Fee & Discount Section */}
+        </div>        <form onSubmit={handleSubmit}>
+          {/* 1. Patient Details & Visiting Fee Section */}
           <div
             className="form-group"
             style={{
@@ -394,7 +392,45 @@ export const WritePrescription = () => {
             </div>
           </div>
 
-          {/* Diagnoses Section */}
+          {/* 2. Reason to Visit Segment */}
+          <div className="form-group" style={{ marginBottom: '24px' }}>
+            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.95rem', fontWeight: 700 }}>
+              <Stethoscope size={18} color="var(--primary)" />
+              <span>Reason for Visit</span>
+            </label>
+            <div
+              style={{
+                backgroundColor: 'var(--table-header-bg)',
+                padding: '12px 16px',
+                borderRadius: '10px',
+                border: '1px solid var(--border-color)',
+                fontSize: '0.92rem',
+                color: 'var(--text-main)',
+                fontWeight: 600
+              }}
+            >
+              {appointment?.reason || 'General Consultation / Not specified'}
+            </div>
+          </div>
+
+          {/* 3. Prescribed Medicines & Dosage */}
+          <div className="form-group" style={{ marginBottom: '24px' }}>
+            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.95rem', fontWeight: 700 }}>
+              <Pill size={18} color="var(--primary)" />
+              <span>Prescribed Medicines & Dosage *</span>
+            </label>
+            <textarea
+              className="form-textarea"
+              rows="6"
+              required
+              placeholder={"1. Tab. Napa 500mg - 1 + 0 + 1 (After meal) - 5 days\n2. Syr. Histacin 5ml - 0 + 0 + 1 (Bedtime) - 3 days"}
+              value={prescriptionForm.medicines}
+              onChange={(e) => setPrescriptionForm({ ...prescriptionForm, medicines: e.target.value })}
+              style={{ fontFamily: 'Courier New, monospace', fontSize: '0.95rem', lineHeight: 1.6 }}
+            />
+          </div>
+
+          {/* 4. Diagnoses & Prescribed Tests */}
           <div style={{ marginBottom: '28px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
               <div>
@@ -597,7 +633,7 @@ export const WritePrescription = () => {
                               height: '38px',
                               display: 'flex',
                               alignItems: 'center',
-                              justifyContent: 'flex-end'
+                              justify: 'flex-end'
                             }}
                           >
                             ৳{(parseFloat(row._netPrice) || 0).toFixed(2)}
@@ -659,27 +695,11 @@ export const WritePrescription = () => {
             )}
           </div>
 
-          {/* Medicines Section */}
-          <div className="form-group" style={{ marginBottom: '24px' }}>
-            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.95rem', fontWeight: 700 }}>
-              <Pill size={18} color="var(--primary)" />
-              <span>Prescribed Medicines & Dosage *</span>
-            </label>
-            <textarea
-              className="form-textarea"
-              rows="6"
-              required
-              placeholder={"1. Tab. Napa 500mg - 1 + 0 + 1 (After meal) - 5 days\n2. Syr. Histacin 5ml - 0 + 0 + 1 (Bedtime) - 3 days"}
-              value={prescriptionForm.medicines}
-              onChange={(e) => setPrescriptionForm({ ...prescriptionForm, medicines: e.target.value })}
-              style={{ fontFamily: 'Courier New, monospace', fontSize: '0.95rem', lineHeight: 1.6 }}
-            />
-          </div>
-
-          {/* Special Advice Section */}
+          {/* 5. Special Advice & Follow-up Instructions */}
           <div className="form-group" style={{ marginBottom: '32px' }}>
-            <label className="form-label" style={{ fontSize: '0.95rem', fontWeight: 700 }}>
-              Special Advice & Follow-up Instructions
+            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.95rem', fontWeight: 700 }}>
+              <CheckCircle size={18} color="var(--primary)" />
+              <span>Special Advice & Follow-up Instructions</span>
             </label>
             <textarea
               className="form-textarea"

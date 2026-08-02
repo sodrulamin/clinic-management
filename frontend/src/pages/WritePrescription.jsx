@@ -676,7 +676,7 @@ export const WritePrescription = () => {
                 Standard Fee: <strong>৳{doctor?.consultationFee || 0}</strong>
               </span>
             </div>
-            <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
               <div style={{ flex: '1 1 200px' }}>
                 <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px', fontWeight: 600 }}>
                   Visiting Fee Discount (৳)
@@ -691,22 +691,27 @@ export const WritePrescription = () => {
                   onChange={(e) => setPrescriptionForm({ ...prescriptionForm, discount: e.target.value })}
                 />
               </div>
-              <div
-                style={{
-                  flex: '1 1 200px',
-                  backgroundColor: 'var(--primary-light)',
-                  padding: '10px 16px',
-                  borderRadius: '10px',
-                  textAlign: 'right',
-                  border: '1px solid rgba(13, 148, 136, 0.2)'
-                }}
-              >
-                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', fontWeight: 500 }}>
+              <div style={{ flex: '1 1 200px' }}>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px', fontWeight: 600 }}>
                   Net Visiting Fee Collected
-                </span>
-                <strong style={{ fontSize: '1.3rem', color: 'var(--primary)' }}>
-                  ৳{Math.max(0, (doctor?.consultationFee || 0) - (Number(prescriptionForm.discount) || 0)).toFixed(2)}
-                </strong>
+                </label>
+                <div
+                  style={{
+                    backgroundColor: 'var(--primary-light)',
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    textAlign: 'right',
+                    border: '1px solid rgba(13, 148, 136, 0.2)',
+                    minHeight: '42px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'flex-end'
+                  }}
+                >
+                  <strong style={{ fontSize: '1.25rem', color: 'var(--primary)' }}>
+                    ৳{Math.max(0, (doctor?.consultationFee || 0) - (Number(prescriptionForm.discount) || 0)).toFixed(2)}
+                  </strong>
+                </div>
               </div>
             </div>
           </div>

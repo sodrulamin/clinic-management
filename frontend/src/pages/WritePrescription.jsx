@@ -27,6 +27,11 @@ export const WritePrescription = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const [bulkDiscount, setBulkDiscount] = useState({
+    type: 'NONE',
+    value: '',
+  });
+
   const [prescriptionForm, setPrescriptionForm] = useState({
     medicines: '',
     advice: '',
@@ -81,6 +86,37 @@ export const WritePrescription = () => {
     return '';
   };
 
+  const handleApplyBulkDiscount = (type, value, doctor) => {
+    setBulkDiscount({ type, value });
+    const numVal = parseFloat(value) || 0;
+    setPrescriptionForm((prev) => {
+      const rows = prev.diagnoses.map((r) => {
+        const { effPct, effFixed } = getEffectiveMax(r, doctor);
+        let updatedType = type;
+        let updatedVal = 0;
+
+        if (type === 'PERCENT') {
+          updatedVal = Math.min(numVal, effPct);
+        } else if (type === 'FIXED') {
+          updatedVal = Math.min(numVal, effFixed);
+        } else {
+          updatedType = 'NONE';
+          updatedVal = 0;
+        }
+
+        const updated = {
+          ...r,
+          discountType: updatedType,
+          discountValue: updatedVal,
+        };
+        updated._netPrice = computeRowNet(updated);
+        updated._error = validateRow(updated, doctor);
+        return updated;
+      });
+      return { ...prev, diagnoses: rows };
+    });
+  };
+
   const updateDiagnosisRow = (key, patch, doctor) => {
     setPrescriptionForm((prev) => {
       const rows = prev.diagnoses.map((r) => {
@@ -98,11 +134,26 @@ export const WritePrescription = () => {
     });
   };
 
-  const addDiagnosisRow = () => {
-    setPrescriptionForm((prev) => ({
-      ...prev,
-      diagnoses: [...prev.diagnoses, emptyDiagnosisRow()],
-    }));
+  const addDiagnosisRow = (doctor) => {
+    const newRow = emptyDiagnosisRow();
+    if (bulkDiscount.type !== 'NONE' && bulkDiscount.value) {
+      newRow.discountType = bulkDiscount.type;
+      newRow.discountValue = parseFloat(bulkDiscount.value) || 0;
+    }
+    setPrescriptionForm((prev) => {
+      const updatedRows = [...prev.diagnoses, newRow];
+      // If bulk discount is active, also run validate/net calculations
+      const finalized = updatedRows.map((r) => {
+        if (r._key !== newRow._key) return r;
+        const { effPct, effFixed } = getEffectiveMax(r, doctor);
+        if (r.discountType === 'PERCENT') r.discountValue = Math.min(r.discountValue, effPct);
+        if (r.discountType === 'FIXED') r.discountValue = Math.min(r.discountValue, effFixed);
+        r._netPrice = computeRowNet(r);
+        r._error = validateRow(r, doctor);
+        return r;
+      });
+      return { ...prev, diagnoses: finalized };
+    });
   };
 
   const removeDiagnosisRow = (key) => {
@@ -352,15 +403,69 @@ export const WritePrescription = () => {
                   Select diagnoses to prescribe. Doctor authority limit: {maxPct}% / ৳{maxFixed} discount.
                 </div>
               </div>
-              <button type="button" className="btn btn-secondary btn-sm" onClick={addDiagnosisRow} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={() => addDiagnosisRow(doctor)} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <PlusCircle size={15} />
                 <span>Add Diagnosis</span>
               </button>
             </div>
 
+            {/* Bulk Discount Toolbar */}
+            {prescriptionForm.diagnoses.length > 0 && (
+              <div
+                style={{
+                  backgroundColor: 'var(--table-header-bg)',
+                  padding: '12px 16px',
+                  borderRadius: '10px',
+                  border: '1px solid var(--border-color)',
+                  marginBottom: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '16px',
+                  flexWrap: 'wrap'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, fontSize: '0.88rem', color: 'var(--text-main)' }}>
+                  <Tag size={16} color="var(--primary)" />
+                  <span>Apply Bulk Discount to All Diagnoses:</span>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  <select
+                    className="form-select"
+                    style={{ width: '160px', height: '36px', fontSize: '0.85rem' }}
+                    value={bulkDiscount.type}
+                    onChange={(e) => handleApplyBulkDiscount(e.target.value, bulkDiscount.value, doctor)}
+                  >
+                    <option value="NONE">No Bulk Discount</option>
+                    <option value="PERCENT">Percent (%)</option>
+                    <option value="FIXED">Fixed Amount (৳)</option>
+                  </select>
+
+                  {bulkDiscount.type !== 'NONE' && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        placeholder={bulkDiscount.type === 'PERCENT' ? 'e.g. 15%' : 'e.g. 200'}
+                        className="form-input"
+                        style={{ width: '130px', height: '36px', fontSize: '0.85rem' }}
+                        value={bulkDiscount.value}
+                        onChange={(e) => handleApplyBulkDiscount(bulkDiscount.type, e.target.value, doctor)}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', width: '100%', marginTop: '-4px' }}>
+                  💡 Automatically caps the discount for each diagnosis at its allowed maximum limit.
+                </div>
+              </div>
+            )}
+
             {prescriptionForm.diagnoses.length === 0 && (
               <div
-                onClick={addDiagnosisRow}
+                onClick={() => addDiagnosisRow(doctor)}
                 style={{
                   textAlign: 'center',
                   color: 'var(--text-muted)',

@@ -35,6 +35,7 @@ export const WritePrescription = () => {
   const [prescriptionForm, setPrescriptionForm] = useState({
     medicines: '',
     advice: '',
+    reason: '',
     discount: 0,
     diagnoses: [],
   });
@@ -180,6 +181,7 @@ export const WritePrescription = () => {
 
         let medicines = '';
         let advice = '';
+        let reason = app.reason || '';
         let discount = app.discount || 0;
         let diagnoses = [];
 
@@ -189,6 +191,9 @@ export const WritePrescription = () => {
             medicines = rxRes.data.medicines || '';
             advice = rxRes.data.advice || '';
             discount = app.discount !== undefined ? app.discount : (rxRes.data.appointment?.discount || 0);
+            if (rxRes.data.appointment?.reason) {
+              reason = rxRes.data.appointment.reason;
+            }
 
             if (rxRes.data.prescriptionDiagnoses && rxRes.data.prescriptionDiagnoses.length > 0) {
               diagnoses = rxRes.data.prescriptionDiagnoses.map((pd) => ({
@@ -207,7 +212,7 @@ export const WritePrescription = () => {
           // No existing prescription found yet (e.g. 404), start with clean prescription form
         }
 
-        setPrescriptionForm({ medicines, advice, discount, diagnoses });
+        setPrescriptionForm({ medicines, advice, reason, discount, diagnoses });
       } catch (err) {
         console.error('Failed to load appointment details', err);
         setError('Failed to load appointment details or prescription.');
@@ -245,6 +250,7 @@ export const WritePrescription = () => {
         diagnoses: diagnosesPayload,
         medicines: prescriptionForm.medicines,
         advice: prescriptionForm.advice,
+        reason: prescriptionForm.reason,
         discount: Number(prescriptionForm.discount) || 0,
       });
 
@@ -337,80 +343,20 @@ export const WritePrescription = () => {
             </div>
           </div>
         </div>        <form onSubmit={handleSubmit}>
-          {/* 1. Patient Details & Visiting Fee Section */}
-          <div
-            className="form-group"
-            style={{
-              backgroundColor: 'var(--table-header-bg)',
-              padding: '18px',
-              borderRadius: '12px',
-              border: '1px solid var(--border-color)',
-              marginBottom: '24px'
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-              <label className="form-label" style={{ margin: 0, fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.95rem' }}>
-                <DollarSign size={18} color="var(--primary)" />
-                <span>Visiting Fee & Discount</span>
-              </label>
-              <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                Standard Fee: <strong>৳{doctor?.consultationFee || 0}</strong>
-              </span>
-            </div>
-            <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <div style={{ flex: '1 1 200px' }}>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px', fontWeight: 600 }}>
-                  Visiting Fee Discount (৳)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="any"
-                  className="form-input"
-                  placeholder="0"
-                  value={prescriptionForm.discount}
-                  onChange={(e) => setPrescriptionForm({ ...prescriptionForm, discount: e.target.value })}
-                />
-              </div>
-              <div
-                style={{
-                  flex: '1 1 200px',
-                  backgroundColor: 'var(--primary-light)',
-                  padding: '10px 16px',
-                  borderRadius: '10px',
-                  textAlign: 'right',
-                  border: '1px solid rgba(13, 148, 136, 0.2)'
-                }}
-              >
-                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', fontWeight: 500 }}>
-                  Net Visiting Fee Collected
-                </span>
-                <strong style={{ fontSize: '1.3rem', color: 'var(--primary)' }}>
-                  ৳{Math.max(0, (doctor?.consultationFee || 0) - (Number(prescriptionForm.discount) || 0)).toFixed(2)}
-                </strong>
-              </div>
-            </div>
-          </div>
-
-          {/* 2. Reason to Visit Segment */}
+          {/* 1. Reason for Visit Segment (Editable) */}
           <div className="form-group" style={{ marginBottom: '24px' }}>
             <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.95rem', fontWeight: 700 }}>
               <Stethoscope size={18} color="var(--primary)" />
               <span>Reason for Visit</span>
             </label>
-            <div
-              style={{
-                backgroundColor: 'var(--table-header-bg)',
-                padding: '12px 16px',
-                borderRadius: '10px',
-                border: '1px solid var(--border-color)',
-                fontSize: '0.92rem',
-                color: 'var(--text-main)',
-                fontWeight: 600
-              }}
-            >
-              {appointment?.reason || 'General Consultation / Not specified'}
-            </div>
+            <input
+              type="text"
+              className="form-input"
+              placeholder="e.g. Fever, cough, Routine checkup..."
+              value={prescriptionForm.reason}
+              onChange={(e) => setPrescriptionForm({ ...prescriptionForm, reason: e.target.value })}
+              style={{ fontSize: '0.92rem', padding: '10px 14px' }}
+            />
           </div>
 
           {/* 3. Prescribed Medicines & Dosage */}
@@ -696,7 +642,7 @@ export const WritePrescription = () => {
           </div>
 
           {/* 5. Special Advice & Follow-up Instructions */}
-          <div className="form-group" style={{ marginBottom: '32px' }}>
+          <div className="form-group" style={{ marginBottom: '28px' }}>
             <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.95rem', fontWeight: 700 }}>
               <CheckCircle size={18} color="var(--primary)" />
               <span>Special Advice & Follow-up Instructions</span>
@@ -708,6 +654,61 @@ export const WritePrescription = () => {
               value={prescriptionForm.advice}
               onChange={(e) => setPrescriptionForm({ ...prescriptionForm, advice: e.target.value })}
             />
+          </div>
+
+          {/* 6. Visiting Fee & Discount Section (Moved to Bottom) */}
+          <div
+            className="form-group"
+            style={{
+              backgroundColor: 'var(--table-header-bg)',
+              padding: '18px',
+              borderRadius: '12px',
+              border: '1px solid var(--border-color)',
+              marginBottom: '32px'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <label className="form-label" style={{ margin: 0, fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.95rem' }}>
+                <DollarSign size={18} color="var(--primary)" />
+                <span>Visiting Fee & Discount</span>
+              </label>
+              <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                Standard Fee: <strong>৳{doctor?.consultationFee || 0}</strong>
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ flex: '1 1 200px' }}>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px', fontWeight: 600 }}>
+                  Visiting Fee Discount (৳)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  className="form-input"
+                  placeholder="0"
+                  value={prescriptionForm.discount}
+                  onChange={(e) => setPrescriptionForm({ ...prescriptionForm, discount: e.target.value })}
+                />
+              </div>
+              <div
+                style={{
+                  flex: '1 1 200px',
+                  backgroundColor: 'var(--primary-light)',
+                  padding: '10px 16px',
+                  borderRadius: '10px',
+                  textAlign: 'right',
+                  border: '1px solid rgba(13, 148, 136, 0.2)'
+                }}
+              >
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', fontWeight: 500 }}>
+                  Net Visiting Fee Collected
+                </span>
+                <strong style={{ fontSize: '1.3rem', color: 'var(--primary)' }}>
+                  ৳{Math.max(0, (doctor?.consultationFee || 0) - (Number(prescriptionForm.discount) || 0)).toFixed(2)}
+                </strong>
+              </div>
+            </div>
           </div>
 
           {/* Action buttons */}

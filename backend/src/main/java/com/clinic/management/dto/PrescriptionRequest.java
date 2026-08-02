@@ -9,5 +9,6 @@ public class PrescriptionRequest {
     private List<PrescriptionDiagnosisDto> diagnoses; // structured multi-diagnosis list
     private String medicines;
     private String advice;
+    private String reason;   // reason for visit
     private Double discount; // visiting-fee discount (legacy field, still supported)
 }

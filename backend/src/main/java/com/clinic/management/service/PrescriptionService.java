@@ -101,7 +101,10 @@ public class PrescriptionService {
             }
         }
 
-        // --- Apply visiting-fee discount ---
+        // --- Apply reason & visiting-fee discount ---
+        if (request.getReason() != null) {
+            appointment.setReason(request.getReason());
+        }
         if (request.getDiscount() != null && request.getDiscount() >= 0) {
             appointment.setDiscount(request.getDiscount());
         }

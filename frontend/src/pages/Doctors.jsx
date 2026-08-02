@@ -1,13 +1,67 @@
 import React, { useState, useEffect, useContext } from 'react';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
-import { Stethoscope, Plus, Edit, Trash2, X, Upload, Camera } from 'lucide-react';
+import { Stethoscope, Plus, Edit, Trash2, X, Upload, Camera, Search, Filter } from 'lucide-react';
+
+const DAYS = [
+  { short: 'Mon', full: 'Monday' },
+  { short: 'Tue', full: 'Tuesday' },
+  { short: 'Wed', full: 'Wednesday' },
+  { short: 'Thu', full: 'Thursday' },
+  { short: 'Fri', full: 'Friday' },
+  { short: 'Sat', full: 'Saturday' },
+  { short: 'Sun', full: 'Sunday' },
+];
+
+const matchesDay = (workingHoursStr, selectedDayShort) => {
+  if (!selectedDayShort) return true;
+  if (!workingHoursStr) return false;
+  const str = workingHoursStr.toLowerCase();
+
+  if (str.includes('everyday') || str.includes('daily') || str.includes('all days') || str.includes('7 days')) {
+    return true;
+  }
+
+  const dayIndex = DAYS.findIndex((d) => d.short === selectedDayShort);
+  if (dayIndex === -1) return true;
+
+  const dayObj = DAYS[dayIndex];
+  if (str.includes(dayObj.short.toLowerCase()) || str.includes(dayObj.full.toLowerCase())) {
+    return true;
+  }
+
+  for (let startIdx = 0; startIdx < DAYS.length; startIdx++) {
+    for (let endIdx = 0; endIdx < DAYS.length; endIdx++) {
+      if (startIdx === endIdx) continue;
+      const startD = DAYS[startIdx];
+      const endD = DAYS[endIdx];
+
+      const rangeRegex = new RegExp(`(${startD.short}|${startD.full})\\s*-\\s*(${endD.short}|${endD.full})`, 'i');
+      if (rangeRegex.test(str)) {
+        let i = startIdx;
+        while (true) {
+          if (i === dayIndex) return true;
+          if (i === endIdx) break;
+          i = (i + 1) % DAYS.length;
+        }
+      }
+    }
+  }
+
+  return false;
+};
 
 export const Doctors = () => {
   const [doctors, setDoctors] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingDoctor, setEditingDoctor] = useState(null);
   const { user } = useContext(AuthContext);
+
+  const [searchFilters, setSearchFilters] = useState({
+    name: '',
+    speciality: '',
+    day: '',
+  });
 
   const isAdmin = user?.role === 'ROLE_ADMIN';
   const isRec = user?.role === 'ROLE_RECEPTIONIST';
@@ -138,10 +192,32 @@ export const Doctors = () => {
     }
   };
 
+  const allSpecialities = Array.from(
+    new Set(doctors.map((d) => d.specialization).filter(Boolean))
+  ).sort();
+
+  const filteredDoctors = doctors.filter((doc) => {
+    if (searchFilters.name.trim()) {
+      const q = searchFilters.name.toLowerCase().trim();
+      const matchName = doc.fullName && doc.fullName.toLowerCase().includes(q);
+      if (!matchName) return false;
+    }
+
+    if (searchFilters.speciality) {
+      if (doc.specialization !== searchFilters.speciality) return false;
+    }
+
+    if (searchFilters.day) {
+      if (!matchesDay(doc.workingHours, searchFilters.day)) return false;
+    }
+
+    return true;
+  });
+
   return (
     <div>
       <div className="card">
-        <div className="card-header">
+        <div className="card-header" style={{ flexWrap: 'wrap', gap: '12px' }}>
           <div className="card-title">Doctor Profiles & Schedules</div>
           {(isAdmin || isRec) && (
             <button className="btn btn-primary" onClick={() => openModal()}>
@@ -151,52 +227,173 @@ export const Doctors = () => {
           )}
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
-          {doctors.map((doc) => (
-            <div key={doc.id} className="card" style={{ marginBottom: 0, padding: '20px', position: 'relative' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '14px' }}>
-                {doc.profileImage ? (
-                  <img
-                    src={doc.profileImage}
-                    alt={doc.fullName}
-                    style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary)' }}
-                  />
-                ) : (
-                  <div className="stat-icon teal" style={{ width: '56px', height: '56px', borderRadius: '50%' }}>
-                    <Stethoscope size={26} />
+        {/* Search & Filter Bar */}
+        <div
+          style={{
+            backgroundColor: 'var(--table-header-bg)',
+            padding: '16px 20px',
+            borderRadius: '12px',
+            border: '1px solid var(--border-color)',
+            marginBottom: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px',
+            flexWrap: 'wrap'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-main)' }}>
+            <Filter size={18} color="var(--primary)" />
+            <span>Search & Filter:</span>
+          </div>
+
+          {/* 1. Doctor Name Search */}
+          <div style={{ flex: '1 1 220px' }}>
+            <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+              Doctor Name
+            </label>
+            <div style={{ position: 'relative' }}>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Search by doctor name..."
+                value={searchFilters.name}
+                onChange={(e) => setSearchFilters({ ...searchFilters, name: e.target.value })}
+                style={{ paddingLeft: '34px', fontSize: '0.88rem' }}
+              />
+              <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
+            </div>
+          </div>
+
+          {/* 2. Doctor Speciality */}
+          <div style={{ flex: '1 1 200px' }}>
+            <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+              Doctor Speciality
+            </label>
+            <select
+              className="form-select"
+              style={{ fontSize: '0.88rem' }}
+              value={searchFilters.speciality}
+              onChange={(e) => setSearchFilters({ ...searchFilters, speciality: e.target.value })}
+            >
+              <option value="">All Specialities</option>
+              {allSpecialities.map((spec) => (
+                <option key={spec} value={spec}>{spec}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* 3. Doctor Available Day */}
+          <div style={{ flex: '1 1 180px' }}>
+            <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+              Available Day
+            </label>
+            <select
+              className="form-select"
+              style={{ fontSize: '0.88rem' }}
+              value={searchFilters.day}
+              onChange={(e) => setSearchFilters({ ...searchFilters, day: e.target.value })}
+            >
+              <option value="">All Days</option>
+              <option value="Mon">Monday</option>
+              <option value="Tue">Tuesday</option>
+              <option value="Wed">Wednesday</option>
+              <option value="Thu">Thursday</option>
+              <option value="Fri">Friday</option>
+              <option value="Sat">Saturday</option>
+              <option value="Sun">Sunday</option>
+            </select>
+          </div>
+
+          {/* Clear Filters Button */}
+          {(searchFilters.name || searchFilters.speciality || searchFilters.day) && (
+            <div style={{ flex: '0 0 auto', alignSelf: 'flex-end', paddingBottom: '2px' }}>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => setSearchFilters({ name: '', speciality: '', day: '' })}
+                style={{ fontSize: '0.82rem', padding: '8px 14px' }}
+              >
+                <X size={14} /> Clear Filters
+              </button>
+            </div>
+          )}
+        </div>
+
+        {filteredDoctors.length === 0 ? (
+          <div
+            style={{
+              textAlign: 'center',
+              padding: '40px 20px',
+              backgroundColor: 'var(--table-header-bg)',
+              borderRadius: '12px',
+              border: '1px dashed var(--border-color)',
+              color: 'var(--text-muted)'
+            }}
+          >
+            <Stethoscope size={32} style={{ margin: '0 auto 12px auto', display: 'block', color: 'var(--text-muted)' }} />
+            <h4 style={{ margin: '0 0 6px 0', fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)' }}>
+              No Doctors Found
+            </h4>
+            <p style={{ fontSize: '0.88rem', margin: 0 }}>
+              No doctor profiles match your selected search filters.
+            </p>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => setSearchFilters({ name: '', speciality: '', day: '' })}
+              style={{ marginTop: '14px' }}
+            >
+              Reset Filters
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+            {filteredDoctors.map((doc) => (
+              <div key={doc.id} className="card" style={{ marginBottom: 0, padding: '20px', position: 'relative' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '14px' }}>
+                  {doc.profileImage ? (
+                    <img
+                      src={doc.profileImage}
+                      alt={doc.fullName}
+                      style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary)' }}
+                    />
+                  ) : (
+                    <div className="stat-icon teal" style={{ width: '56px', height: '56px', borderRadius: '50%' }}>
+                      <Stethoscope size={26} />
+                    </div>
+                  )}
+                  <div>
+                    <h3 style={{ fontSize: '1.05rem', fontWeight: 700 }}>{doc.fullName}</h3>
+                    <span className="badge badge-info">{doc.specialization}</span>
+                  </div>
+                </div>
+
+                <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.7 }}>
+                  <p><strong>Qualification:</strong> {doc.qualification || 'N/A'}</p>
+                  <p><strong>Room:</strong> {doc.roomNo || 'N/A'}</p>
+                  <p><strong>Fee:</strong> ৳{doc.consultationFee}</p>
+                  <p><strong>Max Discount Auth:</strong> {doc.maxDiscountPercent || 0}% / ৳{doc.maxDiscountFixed || 0}</p>
+                  <p><strong>Hours:</strong> {doc.workingHours}</p>
+                  <p><strong>Slot Duration:</strong> {doc.appointmentDurationMinutes || 20} mins</p>
+                  <p><strong>Contact:</strong> {doc.phone || doc.email}</p>
+                </div>
+
+                {canEditDoctor(doc) && (
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '16px', justifyContent: 'flex-end' }}>
+                    <button className="btn btn-secondary btn-sm" onClick={() => openModal(doc)}>
+                      <Edit size={14} /> {isDoctor && !isAdmin ? 'Update My Profile' : 'Update Profile'}
+                    </button>
+                    {isAdmin && (
+                      <button className="btn btn-danger btn-sm" onClick={() => handleDelete(doc.id)}>
+                        <Trash2 size={14} />
+                      </button>
+                    )}
                   </div>
                 )}
-                <div>
-                  <h3 style={{ fontSize: '1.05rem', fontWeight: 700 }}>{doc.fullName}</h3>
-                  <span className="badge badge-info">{doc.specialization}</span>
-                </div>
               </div>
-
-              <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.7 }}>
-                <p><strong>Qualification:</strong> {doc.qualification || 'N/A'}</p>
-                <p><strong>Room:</strong> {doc.roomNo || 'N/A'}</p>
-                <p><strong>Fee:</strong> ৳{doc.consultationFee}</p>
-                <p><strong>Max Discount Auth:</strong> {doc.maxDiscountPercent || 0}% / ৳{doc.maxDiscountFixed || 0}</p>
-                <p><strong>Hours:</strong> {doc.workingHours}</p>
-                <p><strong>Slot Duration:</strong> {doc.appointmentDurationMinutes || 20} mins</p>
-                <p><strong>Contact:</strong> {doc.phone || doc.email}</p>
-              </div>
-
-              {canEditDoctor(doc) && (
-                <div style={{ display: 'flex', gap: '8px', marginTop: '16px', justifyContent: 'flex-end' }}>
-                  <button className="btn btn-secondary btn-sm" onClick={() => openModal(doc)}>
-                    <Edit size={14} /> {isDoctor && !isAdmin ? 'Update My Profile' : 'Update Profile'}
-                  </button>
-                  {isAdmin && (
-                    <button className="btn btn-danger btn-sm" onClick={() => handleDelete(doc.id)}>
-                      <Trash2 size={14} />
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {showModal && (

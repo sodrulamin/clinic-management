@@ -493,128 +493,139 @@ export const WritePrescription = () => {
               </div>
             )}
 
-            {prescriptionForm.diagnoses.map((row, idx) => {
-              const { effPct, effFixed } = getEffectiveMax(row, doctor);
-              return (
-                <div
-                  key={row._key}
-                  style={{
-                    border: `1px solid ${row._error ? '#ef4444' : 'var(--border-color)'}`,
-                    borderRadius: '12px',
-                    padding: '14px 16px',
-                    marginBottom: '12px',
-                    backgroundColor: 'var(--bg-main)'
-                  }}
-                >
-                  <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                    {/* Diagnosis dropdown */}
-                    <div style={{ flex: '4 1 260px' }}>
-                      <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '4px', whiteSpace: 'nowrap' }}>
-                        #{idx + 1} Select Diagnosis
-                      </label>
-                      <select
-                        className="form-select"
-                        value={row.diagnosisId}
-                        onChange={(e) => updateDiagnosisRow(row._key, { diagnosisId: e.target.value }, doctor)}
-                      >
-                        <option value="">-- Select a Diagnosis --</option>
-                        {diagnosesList.map((d) => (
-                          <option key={d.id} value={String(d.id)}>
-                            {d.name}{d.code ? ` (${d.code})` : ''} — ৳{d.price || 0}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Price */}
-                    <div style={{ flex: '1 1 100px', minWidth: '90px' }}>
-                      <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '4px', whiteSpace: 'nowrap' }}>Price (৳)</label>
-                      <input
-                        type="number"
-                        className="form-input"
-                        readOnly
-                        value={row._price}
-                        style={{ backgroundColor: 'var(--table-header-bg)', cursor: 'default' }}
-                      />
-                    </div>
-
-                    {/* Discount type */}
-                    <div style={{ flex: '1.5 1 140px', minWidth: '130px' }}>
-                      <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '4px', whiteSpace: 'nowrap' }}>Discount Type</label>
-                      <select
-                        className="form-select"
-                        value={row.discountType}
-                        onChange={(e) => updateDiagnosisRow(row._key, { discountType: e.target.value, discountValue: 0 }, doctor)}
-                      >
-                        <option value="NONE">None</option>
-                        <option value="PERCENT">Percent (%)</option>
-                        <option value="FIXED">Fixed (৳)</option>
-                      </select>
-                    </div>
-
-                    {/* Discount value */}
-                    {row.discountType !== 'NONE' && (
-                      <div style={{ flex: '2 1 160px', minWidth: '150px' }}>
-                        <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '4px', whiteSpace: 'nowrap' }}>
-                          {row.discountType === 'PERCENT' ? `Value (max ${effPct}%)` : `Amount (max ৳${effFixed})`}
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          step="any"
-                          className="form-input"
-                          value={row.discountValue}
-                          onChange={(e) => updateDiagnosisRow(row._key, { discountValue: e.target.value }, doctor)}
-                          style={{ borderColor: row._error ? '#ef4444' : '' }}
-                        />
-                      </div>
-                    )}
-
-                  {/* Net price */}
-                  <div style={{ flex: '0 0 100px' }}>
-                    <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Net (৳)</label>
+            {prescriptionForm.diagnoses.length > 0 && (
+              <div
+                style={{
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  backgroundColor: 'var(--bg-main)',
+                  marginBottom: '16px'
+                }}
+              >
+                {prescriptionForm.diagnoses.map((row, idx) => {
+                  const { effPct, effFixed } = getEffectiveMax(row, doctor);
+                  const isLast = idx === prescriptionForm.diagnoses.length - 1;
+                  return (
                     <div
+                      key={row._key}
                       style={{
-                        padding: '8px 12px',
-                        backgroundColor: 'var(--primary-light)',
-                        borderRadius: '6px',
-                        fontWeight: 700,
-                        color: 'var(--primary)',
-                        textAlign: 'right',
-                        border: '1px solid rgba(13,148,136,0.2)',
-                        height: '38px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justify: 'flex-end'
+                        paddingBottom: isLast ? '0' : '16px',
+                        marginBottom: isLast ? '0' : '16px',
+                        borderBottom: isLast ? 'none' : '1px solid var(--border-color)'
                       }}
                     >
-                      ৳{(parseFloat(row._netPrice) || 0).toFixed(2)}
+                      <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                        {/* Diagnosis dropdown */}
+                        <div style={{ flex: '4 1 260px' }}>
+                          <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '4px', whiteSpace: 'nowrap' }}>
+                            #{idx + 1} Select Diagnosis
+                          </label>
+                          <select
+                            className="form-select"
+                            value={row.diagnosisId}
+                            onChange={(e) => updateDiagnosisRow(row._key, { diagnosisId: e.target.value }, doctor)}
+                          >
+                            <option value="">-- Select a Diagnosis --</option>
+                            {diagnosesList.map((d) => (
+                              <option key={d.id} value={String(d.id)}>
+                                {d.name}{d.code ? ` (${d.code})` : ''} — ৳{d.price || 0}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Price */}
+                        <div style={{ flex: '1 1 100px', minWidth: '90px' }}>
+                          <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '4px', whiteSpace: 'nowrap' }}>Price (৳)</label>
+                          <input
+                            type="number"
+                            className="form-input"
+                            readOnly
+                            value={row._price}
+                            style={{ backgroundColor: 'var(--table-header-bg)', cursor: 'default' }}
+                          />
+                        </div>
+
+                        {/* Discount type */}
+                        <div style={{ flex: '1.5 1 140px', minWidth: '130px' }}>
+                          <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '4px', whiteSpace: 'nowrap' }}>Discount Type</label>
+                          <select
+                            className="form-select"
+                            value={row.discountType}
+                            onChange={(e) => updateDiagnosisRow(row._key, { discountType: e.target.value, discountValue: 0 }, doctor)}
+                          >
+                            <option value="NONE">None</option>
+                            <option value="PERCENT">Percent (%)</option>
+                            <option value="FIXED">Fixed (৳)</option>
+                          </select>
+                        </div>
+
+                        {/* Discount value */}
+                        {row.discountType !== 'NONE' && (
+                          <div style={{ flex: '2 1 160px', minWidth: '150px' }}>
+                            <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '4px', whiteSpace: 'nowrap' }}>
+                              {row.discountType === 'PERCENT' ? `Value (max ${effPct}%)` : `Amount (max ৳${effFixed})`}
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              className="form-input"
+                              value={row.discountValue}
+                              onChange={(e) => updateDiagnosisRow(row._key, { discountValue: e.target.value }, doctor)}
+                              style={{ borderColor: row._error ? '#ef4444' : '' }}
+                            />
+                          </div>
+                        )}
+
+                        {/* Net price */}
+                        <div style={{ flex: '0 0 100px' }}>
+                          <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Net (৳)</label>
+                          <div
+                            style={{
+                              padding: '8px 12px',
+                              backgroundColor: 'var(--primary-light)',
+                              borderRadius: '6px',
+                              fontWeight: 700,
+                              color: 'var(--primary)',
+                              textAlign: 'right',
+                              border: '1px solid rgba(13,148,136,0.2)',
+                              height: '38px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end'
+                            }}
+                          >
+                            ৳{(parseFloat(row._netPrice) || 0).toFixed(2)}
+                          </div>
+                        </div>
+
+                        {/* Remove button */}
+                        <div style={{ flex: '0 0 36px', display: 'flex', alignItems: 'flex-end', paddingBottom: '2px' }}>
+                          <button
+                            type="button"
+                            onClick={() => removeDiagnosisRow(row._key)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '6px' }}
+                            title="Remove Diagnosis"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Error text */}
+                      {row._error && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px', color: '#ef4444', fontSize: '0.8rem', fontWeight: 600 }}>
+                          <AlertCircle size={14} />
+                          {row._error}
+                        </div>
+                      )}
                     </div>
-                  </div>
-
-                  {/* Remove button */}
-                  <div style={{ flex: '0 0 36px', display: 'flex', alignItems: 'flex-end', paddingBottom: '2px' }}>
-                    <button
-                      type="button"
-                      onClick={() => removeDiagnosisRow(row._key)}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '6px' }}
-                      title="Remove Diagnosis"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Error text */}
-                {row._error && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px', color: '#ef4444', fontSize: '0.8rem', fontWeight: 600 }}>
-                    <AlertCircle size={14} />
-                    {row._error}
-                  </div>
-                )}
+                  );
+                })}
               </div>
-            );
-          })}
+            )}
 
             {prescriptionForm.diagnoses.length > 0 && (
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', padding: '10px 4px', fontSize: '0.95rem' }}>

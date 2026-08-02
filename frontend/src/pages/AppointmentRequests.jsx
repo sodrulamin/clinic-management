@@ -234,18 +234,26 @@ export const AppointmentRequests = () => {
                     required
                   />
                   {matchingPatients.length > 0 && (
-                    <div style={{ marginTop: '6px' }}>
-                      <label style={{ fontSize: '0.78rem', color: 'var(--primary)', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+                    <div style={{ marginTop: '8px' }}>
+                      <label style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
                         💡 Found {matchingPatients.length} Existing Patient(s) — Select to Auto-Fill:
                       </label>
                       <select
                         className="form-select"
-                        style={{ fontSize: '0.84rem', borderColor: 'var(--primary)', backgroundColor: 'var(--primary-light)', padding: '6px 10px' }}
+                        style={{
+                          fontSize: '0.86rem',
+                          borderColor: 'var(--primary)',
+                          backgroundColor: 'var(--bg-card)',
+                          color: 'var(--text-main)',
+                          padding: '8px 12px'
+                        }}
                         onChange={(e) => handleSelectExistingPatient(e.target.value)}
                       >
-                        <option value="">-- Choose Patient Profile --</option>
+                        <option value="" style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}>
+                          -- Choose Patient Profile --
+                        </option>
                         {matchingPatients.map((p) => (
-                          <option key={p.id} value={p.id}>
+                          <option key={p.id} value={p.id} style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}>
                             {p.fullName} ({p.gender || 'N/A'}, {p.age ? `${p.age} yrs` : 'Age N/A'}) {p.email ? `- ${p.email}` : ''}
                           </option>
                         ))}

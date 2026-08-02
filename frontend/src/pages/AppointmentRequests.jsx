@@ -19,6 +19,8 @@ export const AppointmentRequests = () => {
     reason: '',
   });
 
+  const [patients, setPatients] = useState([]);
+
   const fetchRequests = async () => {
     try {
       const url = filterStatus === 'ALL' ? '/appointment-requests' : `/appointment-requests?status=${filterStatus}`;
@@ -41,10 +43,39 @@ export const AppointmentRequests = () => {
     }
   };
 
+  const fetchPatients = async () => {
+    try {
+      const res = await api.get('/patients');
+      setPatients(res.data || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   useEffect(() => {
     fetchRequests();
     fetchDoctors();
+    fetchPatients();
   }, [filterStatus]);
+
+  const matchingPatients = formData.patientPhone.trim().length >= 3
+    ? patients.filter((p) => p.phone && p.phone.trim().includes(formData.patientPhone.trim()))
+    : [];
+
+  const handleSelectExistingPatient = (patientId) => {
+    if (!patientId) return;
+    const p = patients.find((pat) => String(pat.id) === String(patientId));
+    if (p) {
+      setFormData((prev) => ({
+        ...prev,
+        patientName: p.fullName || prev.patientName,
+        patientPhone: p.phone || prev.patientPhone,
+        patientEmail: p.email || prev.patientEmail,
+        age: p.age !== undefined && p.age !== null ? String(p.age) : prev.age,
+        gender: p.gender || prev.gender,
+      }));
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -197,10 +228,30 @@ export const AppointmentRequests = () => {
                   <input
                     type="text"
                     className="form-input"
+                    placeholder="e.g. 01700000000"
                     value={formData.patientPhone}
                     onChange={(e) => setFormData({ ...formData, patientPhone: e.target.value })}
                     required
                   />
+                  {matchingPatients.length > 0 && (
+                    <div style={{ marginTop: '6px' }}>
+                      <label style={{ fontSize: '0.78rem', color: 'var(--primary)', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+                        💡 Found {matchingPatients.length} Existing Patient(s) — Select to Auto-Fill:
+                      </label>
+                      <select
+                        className="form-select"
+                        style={{ fontSize: '0.84rem', borderColor: 'var(--primary)', backgroundColor: 'var(--primary-light)', padding: '6px 10px' }}
+                        onChange={(e) => handleSelectExistingPatient(e.target.value)}
+                      >
+                        <option value="">-- Choose Patient Profile --</option>
+                        {matchingPatients.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.fullName} ({p.gender || 'N/A'}, {p.age ? `${p.age} yrs` : 'Age N/A'}) {p.email ? `- ${p.email}` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
 
                 <div className="form-group">

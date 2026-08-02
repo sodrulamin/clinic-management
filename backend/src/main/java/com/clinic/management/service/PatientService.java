@@ -26,9 +26,6 @@ public class PatientService {
     }
 
     public Patient createPatient(Patient patient) {
-        if (patientRepository.findByPhone(patient.getPhone()).isPresent()) {
-            throw new IllegalArgumentException("Patient with this phone number already exists!");
-        }
         return patientRepository.save(patient);
     }
 

@@ -12,6 +12,8 @@ export const AppointmentRequests = () => {
     patientName: '',
     patientPhone: '',
     patientEmail: '',
+    age: '',
+    gender: '',
     doctorId: '',
     preferredDate: new Date().toISOString().split('T')[0],
     reason: '',
@@ -47,7 +49,12 @@ export const AppointmentRequests = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/appointment-requests', formData);
+      const payload = {
+        ...formData,
+        age: formData.age ? parseInt(formData.age) : null,
+        gender: formData.gender || null,
+      };
+      await api.post('/appointment-requests', payload);
       setShowModal(false);
       fetchRequests();
     } catch (err) {
@@ -117,6 +124,11 @@ export const AppointmentRequests = () => {
                 <tr key={req.id}>
                   <td>
                     <strong>{req.patientName}</strong>
+                    {(req.gender || req.age) && (
+                      <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginLeft: '6px' }}>
+                        ({req.gender || ''}{req.gender && req.age ? ', ' : ''}{req.age ? `${req.age} yrs` : ''})
+                      </span>
+                    )}
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{req.patientPhone}</div>
                     {req.patientEmail && (
                       <div style={{ fontSize: '0.78rem', color: 'var(--text-light)' }}>{req.patientEmail}</div>
@@ -169,7 +181,7 @@ export const AppointmentRequests = () => {
 
             <form onSubmit={handleSubmit}>
               <div className="form-group">
-                <label className="form-label">Patient Name</label>
+                <label className="form-label">Patient Name *</label>
                 <input
                   type="text"
                   className="form-input"
@@ -181,7 +193,7 @@ export const AppointmentRequests = () => {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div className="form-group">
-                  <label className="form-label">Patient Phone</label>
+                  <label className="form-label">Patient Phone *</label>
                   <input
                     type="text"
                     className="form-input"
@@ -199,6 +211,36 @@ export const AppointmentRequests = () => {
                     value={formData.patientEmail}
                     onChange={(e) => setFormData({ ...formData, patientEmail: e.target.value })}
                   />
+                </div>
+              </div>
+
+              {/* Patient Age & Gender */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="form-group">
+                  <label className="form-label">Patient Age (Years)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="150"
+                    className="form-input"
+                    placeholder="e.g. 35"
+                    value={formData.age}
+                    onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Patient Gender</label>
+                  <select
+                    className="form-select"
+                    value={formData.gender}
+                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                  >
+                    <option value="">-- Select Gender --</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
                 </div>
               </div>
 

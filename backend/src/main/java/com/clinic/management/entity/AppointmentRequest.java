@@ -27,6 +27,11 @@ public class AppointmentRequest {
     @Column(length = 100)
     private String patientEmail;
 
+    private Integer age;
+
+    @Column(length = 20)
+    private String gender;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "doctor_id", nullable = false)
     private Doctor doctor;

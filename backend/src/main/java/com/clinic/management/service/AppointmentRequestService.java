@@ -39,6 +39,8 @@ public class AppointmentRequestService {
                 .patientName(requestDto.getPatientName())
                 .patientPhone(requestDto.getPatientPhone())
                 .patientEmail(requestDto.getPatientEmail())
+                .age(requestDto.getAge())
+                .gender(requestDto.getGender())
                 .doctor(doctor)
                 .preferredDate(requestDto.getPreferredDate())
                 .preferredTime(preferredTime)
@@ -63,8 +65,23 @@ public class AppointmentRequestService {
                         .fullName(req.getPatientName())
                         .phone(req.getPatientPhone())
                         .email(req.getPatientEmail())
+                        .age(req.getAge())
+                        .gender(req.getGender())
                         .medicalHistory("Created from appointment request")
                         .build()));
+
+        boolean pUpdate = false;
+        if (req.getAge() != null) {
+            patient.setAge(req.getAge());
+            pUpdate = true;
+        }
+        if (req.getGender() != null && !req.getGender().isBlank()) {
+            patient.setGender(req.getGender());
+            pUpdate = true;
+        }
+        if (pUpdate) {
+            patientRepository.save(patient);
+        }
 
         // Create scheduled appointment
         Appointment appointment = Appointment.builder()

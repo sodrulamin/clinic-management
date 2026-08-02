@@ -1,0 +1,2 @@
+ALTER TABLE appointment_requests ADD COLUMN age INT DEFAULT NULL;
+ALTER TABLE appointment_requests ADD COLUMN gender VARCHAR(20) DEFAULT NULL;

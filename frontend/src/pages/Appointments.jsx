@@ -628,7 +628,14 @@ export const Appointments = () => {
                           return (
                             <tr key={pd.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                               <td style={{ padding: '7px 10px', color: 'var(--text-muted)' }}>{i + 1}</td>
-                              <td style={{ padding: '7px 10px', fontWeight: 600 }}>{diagName}</td>
+                              <td style={{ padding: '7px 10px', fontWeight: 600 }}>
+                                <div>{diagName}</div>
+                                {pd.instructions && (
+                                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontStyle: 'italic', fontWeight: 400, marginTop: '2px' }}>
+                                    Note: {pd.instructions}
+                                  </div>
+                                )}
+                              </td>
                               {activePrescription.prescriptionDiagnoses.some((p) => p.discountType !== 'NONE') && (
                                 <td style={{ padding: '7px 10px', textAlign: 'right', color: hasDiscount ? '#d97706' : 'var(--text-muted)', fontWeight: hasDiscount ? 600 : 400 }}>
                                   {discountDisplay}

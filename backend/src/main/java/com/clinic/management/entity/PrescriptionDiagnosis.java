@@ -28,6 +28,9 @@ public class PrescriptionDiagnosis {
     @Column(length = 255)
     private String customName; // used when diagnosis is null (free-text entry)
 
+    @Column(length = 500)
+    private String instructions; // special instructions for diagnosis process
+
     @Builder.Default
     @Column(nullable = false)
     private Double diagnosisPrice = 0.0; // snapshot of price at prescription time

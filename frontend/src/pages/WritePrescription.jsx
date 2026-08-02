@@ -44,6 +44,7 @@ export const WritePrescription = () => {
     diagnosisId: '',
     discountType: 'NONE',
     discountValue: 0,
+    instructions: '',
     _price: 0,
     _netPrice: 0,
     _error: '',
@@ -195,6 +196,7 @@ export const WritePrescription = () => {
                 diagnosisId: pd.diagnosis?.id ? String(pd.diagnosis.id) : '',
                 discountType: pd.discountType || 'NONE',
                 discountValue: pd.discountValue || 0,
+                instructions: pd.instructions || '',
                 _price: pd.diagnosisPrice || 0,
                 _netPrice: pd.netPrice || 0,
                 _error: '',
@@ -235,6 +237,7 @@ export const WritePrescription = () => {
           customName: null,
           discountType: r.discountType,
           discountValue: parseFloat(r.discountValue) || 0,
+          instructions: r.instructions || null,
         }));
 
       await api.post('/prescriptions', {
@@ -612,6 +615,21 @@ export const WritePrescription = () => {
                             <Trash2 size={18} />
                           </button>
                         </div>
+                      </div>
+
+                      {/* Special instruction for diagnosis / lab process */}
+                      <div style={{ marginTop: '8px' }}>
+                        <label style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+                          Special Instruction for Diagnosis / Process (Optional)
+                        </label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          placeholder="e.g. Fasting 12 hours required, Morning sample only, With contrast..."
+                          value={row.instructions || ''}
+                          onChange={(e) => updateDiagnosisRow(row._key, { instructions: e.target.value }, doctor)}
+                          style={{ fontSize: '0.86rem', padding: '6px 12px' }}
+                        />
                       </div>
 
                       {/* Error text */}

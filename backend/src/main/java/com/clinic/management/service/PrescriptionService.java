@@ -93,6 +93,7 @@ public class PrescriptionService {
                         .diagnosisPrice(price)
                         .discountType(dtype)
                         .discountValue(dvalue)
+                        .instructions(dto.getInstructions())
                         .sortOrder(order++)
                         .build();
                 pd.computeNetPrice();

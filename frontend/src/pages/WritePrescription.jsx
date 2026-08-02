@@ -692,17 +692,18 @@ export const WritePrescription = () => {
                 />
               </div>
               <div style={{ flex: '1 1 200px' }}>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px', fontWeight: 600 }}>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px', fontWeight: 600, textAlign: 'right' }}>
                   Net Visiting Fee Collected
                 </label>
                 <div
                   style={{
                     backgroundColor: 'var(--primary-light)',
-                    padding: '8px 16px',
-                    borderRadius: '8px',
+                    padding: '10px 14px',
+                    borderRadius: 'var(--radius-md)',
                     textAlign: 'right',
                     border: '1px solid rgba(13, 148, 136, 0.2)',
-                    minHeight: '42px',
+                    boxSizing: 'border-box',
+                    height: '42px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'flex-end'

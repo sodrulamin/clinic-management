@@ -426,7 +426,7 @@ export const WritePrescription = () => {
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, fontSize: '0.88rem', color: 'var(--text-main)' }}>
                   <Tag size={16} color="var(--primary)" />
-                  <span>Apply Bulk Discount to All Diagnoses:</span>
+                  <span>Discount for Diagnoses:</span>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
@@ -455,10 +455,6 @@ export const WritePrescription = () => {
                       />
                     </div>
                   )}
-                </div>
-
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', width: '100%', marginTop: '-4px' }}>
-                  💡 Automatically caps the discount for each diagnosis at its allowed maximum limit.
                 </div>
               </div>
             )}

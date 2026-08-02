@@ -432,7 +432,7 @@ export const WritePrescription = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                   <select
                     className="form-select"
-                    style={{ width: '160px', height: '36px', fontSize: '0.85rem' }}
+                    style={{ width: '170px', padding: '6px 12px', minHeight: '40px', lineHeight: '1.4', fontSize: '0.88rem' }}
                     value={bulkDiscount.type}
                     onChange={(e) => handleApplyBulkDiscount(e.target.value, bulkDiscount.value, doctor)}
                   >
@@ -449,7 +449,7 @@ export const WritePrescription = () => {
                         step="any"
                         placeholder={bulkDiscount.type === 'PERCENT' ? 'e.g. 15%' : 'e.g. 200'}
                         className="form-input"
-                        style={{ width: '130px', height: '36px', fontSize: '0.85rem' }}
+                        style={{ width: '140px', padding: '6px 12px', minHeight: '40px', lineHeight: '1.4', fontSize: '0.88rem' }}
                         value={bulkDiscount.value}
                         onChange={(e) => handleApplyBulkDiscount(bulkDiscount.type, e.target.value, doctor)}
                       />

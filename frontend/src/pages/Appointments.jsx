@@ -55,6 +55,8 @@ export const Appointments = () => {
     patientId: '',
     appointmentDate: new Date().toISOString().split('T')[0],
     reason: '',
+    age: '',
+    gender: '',
   });
 
   // Prescription form state
@@ -175,10 +177,25 @@ export const Appointments = () => {
 
   // ─── Booking ────────────────────────────────────────────────────────────────
 
+  const handlePatientChange = (patientId) => {
+    const p = patients.find((pat) => String(pat.id) === String(patientId));
+    setFormData((prev) => ({
+      ...prev,
+      patientId,
+      age: p?.age !== undefined && p?.age !== null ? String(p.age) : '',
+      gender: p?.gender || '',
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/appointments', formData);
+      const payload = {
+        ...formData,
+        age: formData.age !== '' ? parseInt(formData.age) : null,
+        gender: formData.gender || null,
+      };
+      await api.post('/appointments', payload);
       setShowModal(false);
       fetchData();
     } catch (err) {
@@ -498,11 +515,40 @@ export const Appointments = () => {
             </div>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
-                <label className="form-label">Select Patient</label>
-                <select className="form-select" value={formData.patientId} onChange={(e) => setFormData({ ...formData, patientId: e.target.value })} required>
+                <label className="form-label">Select Patient *</label>
+                <select className="form-select" value={formData.patientId} onChange={(e) => handlePatientChange(e.target.value)} required>
                   <option value="">-- Choose Patient --</option>
                   {patients.map((p) => (<option key={p.id} value={p.id}>{p.fullName} ({p.phone})</option>))}
                 </select>
+              </div>
+
+              {/* Patient Age & Gender */}
+              <div style={{ display: 'flex', gap: '16px', marginBottom: '18px' }}>
+                <div style={{ flex: '1' }}>
+                  <label className="form-label">Patient Age (Years)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="150"
+                    className="form-input"
+                    placeholder="e.g. 35"
+                    value={formData.age}
+                    onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                  />
+                </div>
+                <div style={{ flex: '1' }}>
+                  <label className="form-label">Patient Gender</label>
+                  <select
+                    className="form-select"
+                    value={formData.gender}
+                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                  >
+                    <option value="">-- Select Gender --</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
               </div>
               <div className="form-group">
                 <label className="form-label">Select Doctor</label>

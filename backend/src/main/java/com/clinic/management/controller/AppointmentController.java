@@ -104,5 +104,7 @@ public class AppointmentController {
         private LocalDate appointmentDate;
         private String timeSlot;
         private String reason;
+        private Integer age;
+        private String gender;
     }
 }

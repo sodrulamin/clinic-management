@@ -146,6 +146,20 @@ public class AppointmentService {
         Patient patient = patientRepository.findById(request.getPatientId())
                 .orElseThrow(() -> new RuntimeException("Patient not found"));
 
+        // Update patient age and gender if supplied
+        boolean patientUpdated = false;
+        if (request.getAge() != null) {
+            patient.setAge(request.getAge());
+            patientUpdated = true;
+        }
+        if (request.getGender() != null && !request.getGender().isBlank()) {
+            patient.setGender(request.getGender());
+            patientUpdated = true;
+        }
+        if (patientUpdated) {
+            patientRepository.save(patient);
+        }
+
         String timeSlot = request.getTimeSlot();
         if (timeSlot == null || timeSlot.isBlank()) {
             timeSlot = appointmentSlotService.determineNextAvailableSlot(doctor, request.getAppointmentDate());

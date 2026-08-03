@@ -62,6 +62,7 @@ public class AppointmentRequestController {
         private Integer age;
         private String gender;
         private Long doctorId;
+        private Long patientId;
         private LocalDate preferredDate;
         private String preferredTime;
         private String reason;

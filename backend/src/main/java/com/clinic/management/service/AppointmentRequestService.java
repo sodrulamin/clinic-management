@@ -41,6 +41,7 @@ public class AppointmentRequestService {
                 .patientEmail(requestDto.getPatientEmail())
                 .age(requestDto.getAge())
                 .gender(requestDto.getGender())
+                .patientId(requestDto.getPatientId())
                 .doctor(doctor)
                 .preferredDate(requestDto.getPreferredDate())
                 .preferredTime(preferredTime)
@@ -59,16 +60,14 @@ public class AppointmentRequestService {
         req.setStatus(AppointmentRequest.RequestStatus.APPROVED);
         requestRepository.save(req);
 
-        // Find or create patient
-        Patient patient = patientRepository.findByPhone(req.getPatientPhone())
-                .orElseGet(() -> patientRepository.save(Patient.builder()
-                        .fullName(req.getPatientName())
-                        .phone(req.getPatientPhone())
-                        .email(req.getPatientEmail())
-                        .age(req.getAge())
-                        .gender(req.getGender())
-                        .medicalHistory("Created from appointment request")
-                        .build()));
+        Patient patient;
+        if (req.getPatientId() != null) {
+            patient = patientRepository.findById(req.getPatientId())
+                    .orElseGet(() -> createNewPatientFromRequest(req));
+        } else {
+            // Always create a new patient if no existing patient was selected from suggested dropdown
+            patient = createNewPatientFromRequest(req);
+        }
 
         boolean pUpdate = false;
         if (req.getAge() != null) {
@@ -101,5 +100,16 @@ public class AppointmentRequestService {
                 .orElseThrow(() -> new RuntimeException("Request not found"));
         req.setStatus(AppointmentRequest.RequestStatus.REJECTED);
         return requestRepository.save(req);
+    }
+
+    private Patient createNewPatientFromRequest(AppointmentRequest req) {
+        return patientRepository.save(Patient.builder()
+                .fullName(req.getPatientName())
+                .phone(req.getPatientPhone())
+                .email(req.getPatientEmail())
+                .age(req.getAge())
+                .gender(req.getGender())
+                .medicalHistory("Created from appointment request")
+                .build());
     }
 }

@@ -32,6 +32,9 @@ public class AppointmentRequest {
     @Column(length = 20)
     private String gender;
 
+    @Column(name = "patient_id")
+    private Long patientId;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "doctor_id", nullable = false)
     private Doctor doctor;

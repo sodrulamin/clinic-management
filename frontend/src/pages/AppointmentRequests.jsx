@@ -14,6 +14,7 @@ export const AppointmentRequests = () => {
     patientEmail: '',
     age: '',
     gender: '',
+    patientId: '',
     doctorId: '',
     preferredDate: new Date().toISOString().split('T')[0],
     reason: '',
@@ -63,11 +64,15 @@ export const AppointmentRequests = () => {
     : [];
 
   const handleSelectExistingPatient = (patientId) => {
-    if (!patientId) return;
+    if (!patientId) {
+      setFormData((prev) => ({ ...prev, patientId: '' }));
+      return;
+    }
     const p = patients.find((pat) => String(pat.id) === String(patientId));
     if (p) {
       setFormData((prev) => ({
         ...prev,
+        patientId: p.id,
         patientName: p.fullName || prev.patientName,
         patientPhone: p.phone || prev.patientPhone,
         patientEmail: p.email || prev.patientEmail,
@@ -84,6 +89,7 @@ export const AppointmentRequests = () => {
         ...formData,
         age: formData.age ? parseInt(formData.age) : null,
         gender: formData.gender || null,
+        patientId: formData.patientId ? parseInt(formData.patientId) : null,
       };
       await api.post('/appointment-requests', payload);
       setShowModal(false);
@@ -217,7 +223,7 @@ export const AppointmentRequests = () => {
                   type="text"
                   className="form-input"
                   value={formData.patientName}
-                  onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, patientName: e.target.value, patientId: '' })}
                   required
                 />
               </div>
@@ -230,7 +236,7 @@ export const AppointmentRequests = () => {
                     className="form-input"
                     placeholder="e.g. 01700000000"
                     value={formData.patientPhone}
-                    onChange={(e) => setFormData({ ...formData, patientPhone: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, patientPhone: e.target.value, patientId: '' })}
                     required
                   />
                   {matchingPatients.length > 0 && (

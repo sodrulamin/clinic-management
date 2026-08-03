@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
@@ -20,6 +20,19 @@ import {
 const AutoCompleteInput = ({ value, onChange, placeholder, fetchUrl, style }) => {
   const [suggestions, setSuggestions] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+  const inputRef = useRef(null);
+
+  const updateCoords = () => {
+    if (inputRef.current) {
+      const rect = inputRef.current.getBoundingClientRect();
+      setCoords({
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: Math.max(rect.width, 220),
+      });
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -41,9 +54,22 @@ const AutoCompleteInput = ({ value, onChange, placeholder, fetchUrl, style }) =>
     };
   }, [value, fetchUrl]);
 
+  useEffect(() => {
+    if (showDropdown) {
+      updateCoords();
+      window.addEventListener('scroll', updateCoords, true);
+      window.addEventListener('resize', updateCoords);
+    }
+    return () => {
+      window.removeEventListener('scroll', updateCoords, true);
+      window.removeEventListener('resize', updateCoords);
+    };
+  }, [showDropdown]);
+
   return (
-    <div style={{ position: 'relative', width: '100%' }}>
+    <div style={{ width: '100%' }}>
       <input
+        ref={inputRef}
         type="text"
         className="form-input"
         style={style}
@@ -51,9 +77,13 @@ const AutoCompleteInput = ({ value, onChange, placeholder, fetchUrl, style }) =>
         value={value}
         onChange={(e) => {
           onChange(e.target.value);
+          updateCoords();
           setShowDropdown(true);
         }}
-        onFocus={() => setShowDropdown(true)}
+        onFocus={() => {
+          updateCoords();
+          setShowDropdown(true);
+        }}
         onBlur={() => {
           setTimeout(() => setShowDropdown(false), 200);
         }}
@@ -62,18 +92,17 @@ const AutoCompleteInput = ({ value, onChange, placeholder, fetchUrl, style }) =>
       {showDropdown && suggestions.length > 0 && (
         <div
           style={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            right: 0,
-            zIndex: 999,
+            position: 'fixed',
+            top: `${coords.top}px`,
+            left: `${coords.left}px`,
+            width: `${coords.width}px`,
+            zIndex: 999999,
             backgroundColor: 'var(--bg-card)',
-            border: '1px solid var(--border-color)',
+            border: '1.5px solid var(--primary)',
             borderRadius: '8px',
-            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.15)',
-            maxHeight: '180px',
-            overflowY: 'auto',
-            marginTop: '4px'
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25)',
+            maxHeight: '220px',
+            overflowY: 'auto'
           }}
         >
           {suggestions.map((item, idx) => (
@@ -85,15 +114,17 @@ const AutoCompleteInput = ({ value, onChange, placeholder, fetchUrl, style }) =>
                 setShowDropdown(false);
               }}
               style={{
-                padding: '8px 12px',
-                fontSize: '0.85rem',
+                padding: '9px 12px',
+                fontSize: '0.88rem',
+                fontWeight: 500,
                 cursor: 'pointer',
                 borderBottom: idx < suggestions.length - 1 ? '1px solid var(--border-color)' : 'none',
                 color: 'var(--text-main)',
+                backgroundColor: 'var(--bg-card)',
                 transition: 'background-color 0.15s'
               }}
               onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--table-header-bg)')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
             >
               {item}
             </div>

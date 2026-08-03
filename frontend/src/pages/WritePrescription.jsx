@@ -17,6 +17,93 @@ import {
   Clock
 } from 'lucide-react';
 
+const AutoCompleteInput = ({ value, onChange, placeholder, fetchUrl, style }) => {
+  const [suggestions, setSuggestions] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const fetchSuggestions = async () => {
+      try {
+        const res = await api.get(`${fetchUrl}?query=${encodeURIComponent(value || '')}`);
+        if (active) {
+          setSuggestions(res.data || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch suggestions', err);
+      }
+    };
+
+    fetchSuggestions();
+
+    return () => {
+      active = false;
+    };
+  }, [value, fetchUrl]);
+
+  return (
+    <div style={{ position: 'relative', width: '100%' }}>
+      <input
+        type="text"
+        className="form-input"
+        style={style}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value);
+          setShowDropdown(true);
+        }}
+        onFocus={() => setShowDropdown(true)}
+        onBlur={() => {
+          setTimeout(() => setShowDropdown(false), 200);
+        }}
+      />
+
+      {showDropdown && suggestions.length > 0 && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            zIndex: 999,
+            backgroundColor: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '8px',
+            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.15)',
+            maxHeight: '180px',
+            overflowY: 'auto',
+            marginTop: '4px'
+          }}
+        >
+          {suggestions.map((item, idx) => (
+            <div
+              key={idx}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                onChange(item);
+                setShowDropdown(false);
+              }}
+              style={{
+                padding: '8px 12px',
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                borderBottom: idx < suggestions.length - 1 ? '1px solid var(--border-color)' : 'none',
+                color: 'var(--text-main)',
+                transition: 'background-color 0.15s'
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--table-header-bg)')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            >
+              {item}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const WritePrescription = () => {
   const { appointmentId } = useParams();
   const navigate = useNavigate();
@@ -33,12 +120,43 @@ export const WritePrescription = () => {
   });
 
   const [prescriptionForm, setPrescriptionForm] = useState({
+    medicinesList: [],
     medicines: '',
     advice: '',
     reason: '',
     discount: 0,
     diagnoses: [],
   });
+
+  const emptyMedicineRow = () => ({
+    _key: Math.random().toString(36).slice(2),
+    type: 'Tab.',
+    name: '',
+    instruction: '',
+    doses: '',
+    duration: '',
+  });
+
+  const addMedicineRow = () => {
+    setPrescriptionForm((prev) => ({
+      ...prev,
+      medicinesList: [...prev.medicinesList, emptyMedicineRow()],
+    }));
+  };
+
+  const updateMedicineRow = (key, patch) => {
+    setPrescriptionForm((prev) => ({
+      ...prev,
+      medicinesList: prev.medicinesList.map((r) => (r._key === key ? { ...r, ...patch } : r)),
+    }));
+  };
+
+  const removeMedicineRow = (key) => {
+    setPrescriptionForm((prev) => ({
+      ...prev,
+      medicinesList: prev.medicinesList.filter((r) => r._key !== key),
+    }));
+  };
 
   const emptyDiagnosisRow = () => ({
     _key: Math.random().toString(36).slice(2),
@@ -144,7 +262,6 @@ export const WritePrescription = () => {
     }
     setPrescriptionForm((prev) => {
       const updatedRows = [...prev.diagnoses, newRow];
-      // If bulk discount is active, also run validate/net calculations
       const finalized = updatedRows.map((r) => {
         if (r._key !== newRow._key) return r;
         const { effPct, effFixed } = getEffectiveMax(r, doctor);
@@ -179,6 +296,7 @@ export const WritePrescription = () => {
         setAppointment(app);
         setDiagnosesList(diagRes.data || []);
 
+        let medicinesList = [];
         let medicines = '';
         let advice = '';
         let reason = app.reason || '';
@@ -195,6 +313,17 @@ export const WritePrescription = () => {
               reason = rxRes.data.appointment.reason;
             }
 
+            if (rxRes.data.prescriptionMedicines && rxRes.data.prescriptionMedicines.length > 0) {
+              medicinesList = rxRes.data.prescriptionMedicines.map((pm) => ({
+                _key: Math.random().toString(36).slice(2),
+                type: pm.type || 'Tab.',
+                name: pm.name || '',
+                instruction: pm.instruction || '',
+                doses: pm.doses || '',
+                duration: pm.duration || '',
+              }));
+            }
+
             if (rxRes.data.prescriptionDiagnoses && rxRes.data.prescriptionDiagnoses.length > 0) {
               diagnoses = rxRes.data.prescriptionDiagnoses.map((pd) => ({
                 _key: Math.random().toString(36).slice(2),
@@ -209,10 +338,10 @@ export const WritePrescription = () => {
             }
           }
         } catch (rxErr) {
-          // No existing prescription found yet (e.g. 404), start with clean prescription form
+          // No existing prescription found yet (e.g. 404)
         }
 
-        setPrescriptionForm({ medicines, advice, reason, discount, diagnoses });
+        setPrescriptionForm({ medicinesList, medicines, advice, reason, discount, diagnoses });
       } catch (err) {
         console.error('Failed to load appointment details', err);
         setError('Failed to load appointment details or prescription.');
@@ -245,9 +374,20 @@ export const WritePrescription = () => {
           instructions: r.instructions || null,
         }));
 
+      const medicinesListPayload = prescriptionForm.medicinesList
+        .filter((m) => m.name && m.name.trim())
+        .map((m) => ({
+          type: m.type,
+          name: m.name.trim(),
+          instruction: m.instruction || null,
+          doses: m.doses || null,
+          duration: m.duration || null,
+        }));
+
       await api.post('/prescriptions', {
         appointmentId: appointment.id,
         diagnoses: diagnosesPayload,
+        medicinesList: medicinesListPayload,
         medicines: prescriptionForm.medicines,
         advice: prescriptionForm.advice,
         reason: prescriptionForm.reason,
@@ -300,51 +440,56 @@ export const WritePrescription = () => {
             {isEdit ? 'Edit Prescription' : 'Write Patient Prescription'}
           </h2>
         </div>
-        <div style={{ width: '80px' }}></div> {/* Spacer for symmetry */}
       </div>
 
       <div className="card" style={{ padding: '28px' }}>
-        {/* Patient & Doctor Banner */}
+        {/* 1. Patient Details Header Banner */}
         <div
           style={{
-            backgroundColor: 'var(--primary-light)',
-            padding: '16px 20px',
+            backgroundColor: 'var(--table-header-bg)',
+            padding: '20px',
             borderRadius: '12px',
-            marginBottom: '24px',
-            borderLeft: '5px solid var(--primary)',
+            border: '1px solid var(--border-color)',
+            marginBottom: '28px',
             display: 'flex',
-            justify: 'space-between',
             alignItems: 'center',
+            justify: 'space-between',
             flexWrap: 'wrap',
             gap: '16px'
           }}
         >
-          <div>
-            <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <User size={18} color="var(--primary)" />
-              {appointment.patient?.fullName}
-              <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-muted)' }}>
-                ({appointment.patient?.gender || 'N/A'}, {appointment.patient?.age ? `${appointment.patient.age} yrs` : 'N/A'})
-              </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div className="stat-icon teal" style={{ width: '48px', height: '48px', borderRadius: '50%' }}>
+              <User size={24} />
             </div>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px', display: 'flex', gap: '16px' }}>
-              <span>Phone: <strong>{appointment.patient?.phone || 'N/A'}</strong></span>
-              <span>Reason: <strong>{appointment.reason || 'Consultation'}</strong></span>
+            <div>
+              <h3 style={{ margin: '0 0 4px 0', fontSize: '1.15rem', fontWeight: 700 }}>
+                {appointment.patient?.fullName}
+              </h3>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                <span>Phone: <strong>{appointment.patient?.phone}</strong></span>
+                {appointment.patient?.age && <span>Age: <strong>{appointment.patient.age} yrs</strong></span>}
+                {appointment.patient?.gender && <span>Gender: <strong>{appointment.patient.gender}</strong></span>}
+              </div>
             </div>
           </div>
 
-          <div style={{ textAlign: 'right', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'flex-end' }}>
-              <Calendar size={14} /> <strong>{appointment.appointmentDate}</strong>
-              <Clock size={14} style={{ marginLeft: '8px' }} /> <strong>{appointment.timeSlot}</strong>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'right' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'flex-end', marginBottom: '2px' }}>
+              <Calendar size={15} color="var(--primary)" />
+              <span>{appointment.appointmentDate}</span>
+              <Clock size={15} color="var(--primary)" style={{ marginLeft: '6px' }} />
+              <span>{appointment.timeSlot}</span>
             </div>
             <div style={{ marginTop: '4px' }}>
               Doctor: <strong>{doctor?.fullName}</strong> ({doctor?.specialization})
             </div>
           </div>
-        </div>        <form onSubmit={handleSubmit}>
+        </div>
+
+        <form onSubmit={handleSubmit}>
           {/* 1. Reason for Visit Segment (Editable) */}
-          <div className="form-group" style={{ marginBottom: '24px' }}>
+          <div className="form-group" style={{ marginBottom: '28px' }}>
             <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.95rem', fontWeight: 700 }}>
               <Stethoscope size={18} color="var(--primary)" />
               <span>Reason for Visit</span>
@@ -359,21 +504,140 @@ export const WritePrescription = () => {
             />
           </div>
 
-          {/* 3. Prescribed Medicines & Dosage */}
-          <div className="form-group" style={{ marginBottom: '24px' }}>
-            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.95rem', fontWeight: 700 }}>
-              <Pill size={18} color="var(--primary)" />
-              <span>Prescribed Medicines & Dosage *</span>
-            </label>
-            <textarea
-              className="form-textarea"
-              rows="6"
-              required
-              placeholder={"1. Tab. Napa 500mg - 1 + 0 + 1 (After meal) - 5 days\n2. Syr. Histacin 5ml - 0 + 0 + 1 (Bedtime) - 3 days"}
-              value={prescriptionForm.medicines}
-              onChange={(e) => setPrescriptionForm({ ...prescriptionForm, medicines: e.target.value })}
-              style={{ fontFamily: 'Courier New, monospace', fontSize: '0.95rem', lineHeight: 1.6 }}
-            />
+          {/* 3. Prescribed Medicines & Dosage (Editable Table with Auto-Suggestions) */}
+          <div style={{ marginBottom: '28px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <div>
+                <label className="form-label" style={{ margin: 0, fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.95rem' }}>
+                  <Pill size={18} color="var(--primary)" />
+                  <span>Prescribed Medicines & Dosage</span>
+                </label>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                  Add prescribed medicines, dosages, and administration instructions for the patient.
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={addMedicineRow}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <PlusCircle size={15} />
+                <span>Add Medicine</span>
+              </button>
+            </div>
+
+            {prescriptionForm.medicinesList.length === 0 ? (
+              <div
+                onClick={addMedicineRow}
+                style={{
+                  textAlign: 'center',
+                  padding: '24px 16px',
+                  backgroundColor: 'var(--table-header-bg)',
+                  borderRadius: '12px',
+                  border: '1px dashed var(--border-color)',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer'
+                }}
+              >
+                <Pill size={24} style={{ margin: '0 auto 8px auto', display: 'block', color: 'var(--text-muted)' }} />
+                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)' }}>No Medicines Added Yet</div>
+                <div style={{ fontSize: '0.8rem', marginTop: '2px' }}>Click here or "+ Add Medicine" above to add a medicine entry.</div>
+              </div>
+            ) : (
+              <div className="table-responsive" style={{ overflowX: 'auto' }}>
+                <table className="custom-table" style={{ width: '100%', minWidth: '780px' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ width: '120px' }}>Type</th>
+                      <th style={{ minWidth: '220px' }}>Medicine Name (with weight/size)</th>
+                      <th style={{ width: '130px' }}>Doses</th>
+                      <th style={{ minWidth: '200px' }}>Instruction</th>
+                      <th style={{ width: '140px' }}>Prescribed Till</th>
+                      <th style={{ width: '50px', textAlign: 'center' }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {prescriptionForm.medicinesList.map((row) => (
+                      <tr key={row._key}>
+                        <td>
+                          <select
+                            className="form-select"
+                            style={{ fontSize: '0.88rem', padding: '6px 10px' }}
+                            value={row.type}
+                            onChange={(e) => updateMedicineRow(row._key, { type: e.target.value })}
+                          >
+                            <option value="Tab.">Tab.</option>
+                            <option value="Syr.">Syr.</option>
+                            <option value="Cap.">Cap.</option>
+                            <option value="Inj.">Inj.</option>
+                            <option value="Drop">Drop</option>
+                            <option value="Ointment">Ointment</option>
+                            <option value="Suppos.">Suppos.</option>
+                            <option value="Inhaler">Inhaler</option>
+                            <option value="Other">Other</option>
+                          </select>
+                        </td>
+
+                        <td>
+                          <AutoCompleteInput
+                            value={row.name}
+                            onChange={(val) => updateMedicineRow(row._key, { name: val })}
+                            placeholder="e.g. Napa 500mg"
+                            fetchUrl="/prescriptions/medicine-suggestions"
+                            style={{ fontSize: '0.88rem', padding: '6px 10px' }}
+                          />
+                        </td>
+
+                        <td>
+                          <input
+                            type="text"
+                            className="form-input"
+                            placeholder="e.g. 1+0+1"
+                            style={{ fontSize: '0.88rem', padding: '6px 10px' }}
+                            value={row.doses}
+                            onChange={(e) => updateMedicineRow(row._key, { doses: e.target.value })}
+                          />
+                        </td>
+
+                        <td>
+                          <AutoCompleteInput
+                            value={row.instruction}
+                            onChange={(val) => updateMedicineRow(row._key, { instruction: val })}
+                            placeholder="e.g. After meal"
+                            fetchUrl="/prescriptions/instruction-suggestions"
+                            style={{ fontSize: '0.88rem', padding: '6px 10px' }}
+                          />
+                        </td>
+
+                        <td>
+                          <input
+                            type="text"
+                            className="form-input"
+                            placeholder="e.g. 7 Days"
+                            style={{ fontSize: '0.88rem', padding: '6px 10px' }}
+                            value={row.duration}
+                            onChange={(e) => updateMedicineRow(row._key, { duration: e.target.value })}
+                          />
+                        </td>
+
+                        <td style={{ textAlign: 'center' }}>
+                          <button
+                            type="button"
+                            className="btn btn-danger btn-sm"
+                            style={{ padding: '6px 8px' }}
+                            onClick={() => removeMedicineRow(row._key)}
+                            title="Remove Medicine"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           {/* 4. Diagnoses & Prescribed Tests */}
@@ -449,194 +713,155 @@ export const WritePrescription = () => {
                 onClick={() => addDiagnosisRow(doctor)}
                 style={{
                   textAlign: 'center',
-                  color: 'var(--text-muted)',
-                  padding: '28px 24px',
-                  border: '2px dashed var(--border-color)',
-                  borderRadius: '10px',
-                  fontSize: '0.92rem',
-                  cursor: 'pointer',
+                  padding: '24px 16px',
                   backgroundColor: 'var(--table-header-bg)',
-                  transition: 'all 0.2s ease',
-                  userSelect: 'none'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--primary)';
-                  e.currentTarget.style.backgroundColor = 'var(--primary-light)';
-                  e.currentTarget.style.color = 'var(--primary)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--border-color)';
-                  e.currentTarget.style.backgroundColor = 'var(--table-header-bg)';
-                  e.currentTarget.style.color = 'var(--text-muted)';
+                  borderRadius: '12px',
+                  border: '1px dashed var(--border-color)',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer'
                 }}
               >
-                <PlusCircle size={24} style={{ display: 'block', margin: '0 auto 8px auto' }} />
-                <strong>No diagnoses added yet.</strong>
-                <div style={{ fontSize: '0.84rem', marginTop: '4px' }}>
-                  Click anywhere in this box or the "Add Diagnosis" button to add diagnosis entries.
-                </div>
+                <Tag size={24} style={{ margin: '0 auto 8px auto', display: 'block', color: 'var(--text-muted)' }} />
+                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)' }}>No Diagnoses Added Yet</div>
+                <div style={{ fontSize: '0.8rem', marginTop: '2px' }}>Click here or "+ Add Diagnosis" above to add a diagnosis.</div>
               </div>
             )}
 
             {prescriptionForm.diagnoses.length > 0 && (
               <div
                 style={{
+                  backgroundColor: 'var(--table-header-bg)',
                   border: '1px solid var(--border-color)',
                   borderRadius: '12px',
-                  padding: '16px',
-                  backgroundColor: 'var(--bg-main)',
-                  marginBottom: '16px'
+                  padding: '16px'
                 }}
               >
-                {prescriptionForm.diagnoses.map((row, idx) => {
-                  const { effPct, effFixed } = getEffectiveMax(row, doctor);
-                  const isLast = idx === prescriptionForm.diagnoses.length - 1;
-                  return (
-                    <div
-                      key={row._key}
-                      style={{
-                        paddingBottom: isLast ? '0' : '16px',
-                        marginBottom: isLast ? '0' : '16px',
-                        borderBottom: isLast ? 'none' : '1px solid var(--border-color)'
-                      }}
-                    >
-                      <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                        {/* Diagnosis dropdown */}
-                        <div style={{ flex: '4 1 260px' }}>
-                          <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '4px', whiteSpace: 'nowrap' }}>
-                            #{idx + 1} Select Diagnosis
-                          </label>
-                          <select
-                            className="form-select"
-                            value={row.diagnosisId}
-                            onChange={(e) => updateDiagnosisRow(row._key, { diagnosisId: e.target.value }, doctor)}
-                          >
-                            <option value="">-- Select a Diagnosis --</option>
-                            {diagnosesList.map((d) => (
-                              <option key={d.id} value={String(d.id)}>
-                                {d.name}{d.code ? ` (${d.code})` : ''} — ৳{d.price || 0}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  {prescriptionForm.diagnoses.map((row, idx) => {
+                    const foundDiag = diagnosesList.find((d) => String(d.id) === String(row.diagnosisId));
+                    const diagCapPct = foundDiag?.maxDiscountPercent;
+                    const diagCapFixed = foundDiag?.maxDiscountFixed;
 
-                        {/* Price */}
-                        <div style={{ flex: '1 1 100px', minWidth: '90px' }}>
-                          <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '4px', whiteSpace: 'nowrap' }}>Price (৳)</label>
-                          <input
-                            type="number"
-                            className="form-input"
-                            readOnly
-                            value={row._price}
-                            style={{ backgroundColor: 'var(--table-header-bg)', cursor: 'default' }}
-                          />
-                        </div>
+                    return (
+                      <div
+                        key={row._key}
+                        style={{
+                          backgroundColor: 'var(--bg-card)',
+                          borderRadius: '10px',
+                          border: row._error ? '1px solid #ef4444' : '1px solid var(--border-color)',
+                          padding: '16px',
+                          boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
+                        }}
+                      >
+                        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr 1fr 1fr auto', gap: '12px', alignItems: 'center' }}>
+                          <div>
+                            <select
+                              className="form-select"
+                              value={row.diagnosisId}
+                              onChange={(e) => updateDiagnosisRow(row._key, { diagnosisId: e.target.value }, doctor)}
+                              style={{ fontSize: '0.9rem', height: '42px' }}
+                            >
+                              <option value="">-- Select Diagnosis --</option>
+                              {diagnosesList.map((d) => (
+                                <option key={d.id} value={d.id}>
+                                  {d.name} {d.code ? `(${d.code})` : ''} - ৳{d.price}
+                                </option>
+                              ))}
+                            </select>
+                            {row.diagnosisId && (
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                                Base Price: <strong>৳{row._price}</strong>
+                                {(diagCapPct || diagCapFixed) && (
+                                  <span style={{ marginLeft: '8px', color: '#d97706' }}>
+                                    (Diagnosis Cap: {diagCapPct || 0}% / ৳{diagCapFixed || 0})
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
 
-                        {/* Discount type */}
-                        <div style={{ flex: '1.5 1 140px', minWidth: '130px' }}>
-                          <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '4px', whiteSpace: 'nowrap' }}>Discount Type</label>
-                          <select
-                            className="form-select"
-                            value={row.discountType}
-                            onChange={(e) => updateDiagnosisRow(row._key, { discountType: e.target.value, discountValue: 0 }, doctor)}
-                          >
-                            <option value="NONE">None</option>
-                            <option value="PERCENT">Percent (%)</option>
-                            <option value="FIXED">Fixed (৳)</option>
-                          </select>
-                        </div>
+                          <div>
+                            <select
+                              className="form-select"
+                              value={row.discountType}
+                              onChange={(e) => updateDiagnosisRow(row._key, { discountType: e.target.value }, doctor)}
+                              style={{ fontSize: '0.9rem', height: '42px' }}
+                            >
+                              <option value="NONE">No Discount</option>
+                              <option value="PERCENT">Percent (%)</option>
+                              <option value="FIXED">Fixed Amount (৳)</option>
+                            </select>
+                          </div>
 
-                        {/* Discount value */}
-                        {row.discountType !== 'NONE' && (
-                          <div style={{ flex: '2 1 160px', minWidth: '150px' }}>
-                            <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '4px', whiteSpace: 'nowrap' }}>
-                              {row.discountType === 'PERCENT' ? `Value (max ${effPct}%)` : `Amount (max ৳${effFixed})`}
-                            </label>
+                          <div>
                             <input
                               type="number"
                               min="0"
                               step="any"
+                              disabled={row.discountType === 'NONE'}
                               className="form-input"
-                              value={row.discountValue}
+                              placeholder={row.discountType === 'PERCENT' ? '%' : '৳'}
+                              value={row.discountType === 'NONE' ? '' : row.discountValue}
                               onChange={(e) => updateDiagnosisRow(row._key, { discountValue: e.target.value }, doctor)}
-                              style={{ borderColor: row._error ? '#ef4444' : '' }}
+                              style={{ fontSize: '0.9rem', height: '42px', boxSizing: 'border-box' }}
                             />
                           </div>
-                        )}
 
-                        {/* Net price */}
-                        <div style={{ flex: '0 0 100px' }}>
-                          <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Net (৳)</label>
-                          <div
-                            style={{
-                              padding: '8px 12px',
-                              backgroundColor: 'var(--primary-light)',
-                              borderRadius: '6px',
-                              fontWeight: 700,
-                              color: 'var(--primary)',
-                              textAlign: 'right',
-                              border: '1px solid rgba(13,148,136,0.2)',
-                              height: '38px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justify: 'flex-end'
-                            }}
-                          >
-                            ৳{(parseFloat(row._netPrice) || 0).toFixed(2)}
+                          <div>
+                            <div
+                              style={{
+                                height: '42px',
+                                boxSizing: 'border-box',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                backgroundColor: 'var(--table-header-bg)',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: 'var(--radius-md)',
+                                fontWeight: 700,
+                                fontSize: '0.92rem',
+                                color: row._netPrice < row._price ? '#059669' : 'var(--text-main)'
+                              }}
+                            >
+                              ৳{row._netPrice.toFixed(2)}
+                            </div>
+                          </div>
+
+                          <div>
+                            <button
+                              type="button"
+                              className="btn btn-danger btn-sm"
+                              style={{ height: '42px', width: '42px', padding: 0, justifyContent: 'center' }}
+                              onClick={() => removeDiagnosisRow(row._key)}
+                              title="Remove Diagnosis"
+                            >
+                              <Trash2 size={16} />
+                            </button>
                           </div>
                         </div>
 
-                        {/* Remove button */}
-                        <div style={{ flex: '0 0 36px', display: 'flex', alignItems: 'flex-end', paddingBottom: '2px' }}>
-                          <button
-                            type="button"
-                            onClick={() => removeDiagnosisRow(row._key)}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '6px' }}
-                            title="Remove Diagnosis"
-                          >
-                            <Trash2 size={18} />
-                          </button>
+                        {/* Special Instruction for Diagnosis / Process */}
+                        <div style={{ marginTop: '12px' }}>
+                          <input
+                            type="text"
+                            className="form-input"
+                            placeholder="Special Instruction for Diagnosis / Process (e.g. Fasting 12 hours required before blood draw)"
+                            value={row.instructions}
+                            onChange={(e) => updateDiagnosisRow(row._key, { instructions: e.target.value }, doctor)}
+                            style={{ fontSize: '0.85rem', padding: '8px 12px' }}
+                          />
                         </div>
+
+                        {row._error && (
+                          <div style={{ color: '#ef4444', fontSize: '0.78rem', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <AlertCircle size={14} />
+                            <span>{row._error}</span>
+                          </div>
+                        )}
                       </div>
-
-                      {/* Special instruction for diagnosis / lab process */}
-                      <div style={{ marginTop: '8px' }}>
-                        <label style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
-                          Special Instruction for Diagnosis / Process (Optional)
-                        </label>
-                        <input
-                          type="text"
-                          className="form-input"
-                          placeholder="e.g. Fasting 12 hours required, Morning sample only, With contrast..."
-                          value={row.instructions || ''}
-                          onChange={(e) => updateDiagnosisRow(row._key, { instructions: e.target.value }, doctor)}
-                          style={{ fontSize: '0.86rem', padding: '6px 12px' }}
-                        />
-                      </div>
-
-                      {/* Error text */}
-                      {row._error && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px', color: '#ef4444', fontSize: '0.8rem', fontWeight: 600 }}>
-                          <AlertCircle size={14} />
-                          {row._error}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {prescriptionForm.diagnoses.length > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', padding: '10px 4px', fontSize: '0.95rem' }}>
-                <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Total Diagnosis Net Cost:</span>
-                <strong style={{ color: 'var(--primary)', fontSize: '1.1rem' }}>৳{totalDiagNet.toFixed(2)}</strong>
-              </div>
-            )}
-
-            {prescriptionForm.diagnoses.some((r) => r.discountType !== 'NONE') && (
-              <div style={{ fontSize: '0.8rem', color: '#d97706', fontStyle: 'italic', padding: '8px 12px', backgroundColor: 'rgba(245,158,11,0.08)', borderRadius: '8px', border: '1px solid rgba(245,158,11,0.2)', marginTop: '6px' }}>
-                ★ Discounts are applicable only if diagnoses are performed within this centre.
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
@@ -650,81 +875,88 @@ export const WritePrescription = () => {
             <textarea
               className="form-textarea"
               rows="4"
-              placeholder="e.g. Gargle with warm salt water. Drink plenty of fluids. Follow up after 7 days if symptoms persist."
+              placeholder="e.g. Drink plenty of water, rest for 3 days, follow up after 1 week..."
               value={prescriptionForm.advice}
               onChange={(e) => setPrescriptionForm({ ...prescriptionForm, advice: e.target.value })}
+              style={{ fontSize: '0.92rem', lineHeight: 1.5 }}
             />
           </div>
 
-          {/* 6. Visiting Fee & Discount Section (Moved to Bottom) */}
+          {/* 6. Visiting Fee & Discount (Bottom of page) */}
           <div
-            className="form-group"
             style={{
               backgroundColor: 'var(--table-header-bg)',
-              padding: '18px',
+              padding: '18px 20px',
               borderRadius: '12px',
               border: '1px solid var(--border-color)',
-              marginBottom: '32px'
+              marginBottom: '28px'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-              <label className="form-label" style={{ margin: 0, fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.95rem' }}>
-                <DollarSign size={18} color="var(--primary)" />
-                <span>Visiting Fee & Discount</span>
-              </label>
-              <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                Standard Fee: <strong>৳{doctor?.consultationFee || 0}</strong>
-              </span>
+            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px' }}>
+              Doctor Visiting Fee Summary
             </div>
-            <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-              <div style={{ flex: '1 1 200px' }}>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px', fontWeight: 600 }}>
-                  Visiting Fee Discount (৳)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="any"
-                  className="form-input"
-                  placeholder="0"
-                  value={prescriptionForm.discount}
-                  onChange={(e) => setPrescriptionForm({ ...prescriptionForm, discount: e.target.value })}
-                />
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+              <div>
+                <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>Standard Consultation Fee:</div>
+                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-main)', marginTop: '2px' }}>
+                  ৳{(doctor?.consultationFee || 0).toFixed(2)}
+                </div>
               </div>
-              <div style={{ flex: '1 1 200px' }}>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px', fontWeight: 600, textAlign: 'right' }}>
-                  Net Visiting Fee Collected
-                </label>
-                <div
-                  style={{
-                    backgroundColor: 'var(--primary-light)',
-                    padding: '10px 14px',
-                    borderRadius: 'var(--radius-md)',
-                    textAlign: 'right',
-                    border: '1px solid rgba(13, 148, 136, 0.2)',
-                    boxSizing: 'border-box',
-                    height: '42px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'flex-end'
-                  }}
-                >
-                  <strong style={{ fontSize: '1.25rem', color: 'var(--primary)' }}>
-                    ৳{Math.max(0, (doctor?.consultationFee || 0) - (Number(prescriptionForm.discount) || 0)).toFixed(2)}
-                  </strong>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: '0.8rem', margin: 0, marginBottom: '4px' }}>
+                    Visiting Fee Discount (৳)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max={doctor?.consultationFee || 9999}
+                    step="any"
+                    className="form-input"
+                    placeholder="0.00"
+                    value={prescriptionForm.discount}
+                    onChange={(e) => setPrescriptionForm({ ...prescriptionForm, discount: e.target.value })}
+                    style={{ width: '160px', height: '42px', fontSize: '0.92rem', boxSizing: 'border-box' }}
+                  />
+                </div>
+
+                <div>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', textAlign: 'right' }}>
+                    Net Visiting Fee Collected
+                  </div>
+                  <div
+                    style={{
+                      height: '42px',
+                      padding: '0 16px',
+                      boxSizing: 'border-box',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justify: 'center',
+                      backgroundColor: 'var(--bg-card)',
+                      border: '1.5px solid var(--primary)',
+                      borderRadius: 'var(--radius-md)',
+                      fontWeight: 800,
+                      fontSize: '1.05rem',
+                      color: 'var(--primary)'
+                    }}
+                  >
+                    ৳{Math.max(0, (doctor?.consultationFee || 0) - (parseFloat(prescriptionForm.discount) || 0)).toFixed(2)}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Action buttons */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '14px', borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
-            <button type="button" className="btn btn-secondary" onClick={() => navigate(-1)} style={{ padding: '10px 20px' }}>
+          {/* Action Buttons */}
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+            <button type="button" className="btn btn-secondary" onClick={() => navigate(-1)}>
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary" disabled={hasDiscountErrors()} style={{ padding: '10px 24px', fontSize: '0.95rem' }}>
+            <button type="submit" className="btn btn-primary" style={{ padding: '10px 24px' }}>
               <CheckCircle size={18} />
-              <span>{isEdit ? 'Save Prescription Changes' : 'Submit Prescription & Mark Visited'}</span>
+              <span>{isEdit ? 'Update Prescription' : 'Save Prescription'}</span>
             </button>
           </div>
         </form>

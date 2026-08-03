@@ -42,4 +42,16 @@ public class PrescriptionController {
     public ResponseEntity<?> getPrescriptionsByPatient(@PathVariable Long patientId) {
         return ResponseEntity.ok(prescriptionService.getPrescriptionsByPatientId(patientId));
     }
+
+    @GetMapping("/medicine-suggestions")
+    @PreAuthorize("@securityService.hasAccess('/appointments')")
+    public ResponseEntity<?> getMedicineSuggestions(@RequestParam(required = false, defaultValue = "") String query) {
+        return ResponseEntity.ok(prescriptionService.getMedicineSuggestions(query));
+    }
+
+    @GetMapping("/instruction-suggestions")
+    @PreAuthorize("@securityService.hasAccess('/appointments')")
+    public ResponseEntity<?> getInstructionSuggestions(@RequestParam(required = false, defaultValue = "") String query) {
+        return ResponseEntity.ok(prescriptionService.getInstructionSuggestions(query));
+    }
 }

@@ -1,6 +1,7 @@
 package com.clinic.management.service;
 
 import com.clinic.management.dto.PrescriptionDiagnosisDto;
+import com.clinic.management.dto.PrescriptionMedicineDto;
 import com.clinic.management.dto.PrescriptionRequest;
 import com.clinic.management.entity.*;
 import com.clinic.management.entity.PrescriptionDiagnosis.DiscountType;
@@ -10,9 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +22,7 @@ public class PrescriptionService {
     private final UserRepository userRepository;
     private final DiagnosisRepository diagnosisRepository;
     private final PrescriptionDiagnosisRepository prescriptionDiagnosisRepository;
+    private final PrescriptionMedicineRepository prescriptionMedicineRepository;
 
     @Transactional
     public Prescription createOrUpdatePrescription(PrescriptionRequest request, Authentication authentication) {
@@ -40,8 +40,46 @@ public class PrescriptionService {
 
         Doctor doctor = appointment.getDoctor();
 
-        if (request.getMedicines() == null || request.getMedicines().isBlank()) {
-            throw new RuntimeException("Prescription medicines list cannot be empty.");
+        // --- Build PrescriptionMedicine list ---
+        List<PrescriptionMedicine> medicineList = new ArrayList<>();
+        if (request.getMedicinesList() != null && !request.getMedicinesList().isEmpty()) {
+            int order = 0;
+            for (PrescriptionMedicineDto dto : request.getMedicinesList()) {
+                if (dto.getName() != null && !dto.getName().isBlank()) {
+                    PrescriptionMedicine pm = PrescriptionMedicine.builder()
+                            .type(dto.getType() != null && !dto.getType().isBlank() ? dto.getType() : "Tab.")
+                            .name(dto.getName().trim())
+                            .instruction(dto.getInstruction())
+                            .doses(dto.getDoses())
+                            .duration(dto.getDuration())
+                            .sortOrder(order++)
+                            .build();
+                    medicineList.add(pm);
+                }
+            }
+        }
+
+        // Legacy summary text string check / generation
+        String medicinesSummary = request.getMedicines();
+        if ((medicinesSummary == null || medicinesSummary.isBlank()) && !medicineList.isEmpty()) {
+            StringBuilder sb = new StringBuilder();
+            for (PrescriptionMedicine pm : medicineList) {
+                sb.append(pm.getType()).append(" ").append(pm.getName());
+                if (pm.getDoses() != null && !pm.getDoses().isBlank()) {
+                    sb.append(" - ").append(pm.getDoses());
+                }
+                if (pm.getDuration() != null && !pm.getDuration().isBlank()) {
+                    sb.append(" (").append(pm.getDuration()).append(")");
+                }
+                if (pm.getInstruction() != null && !pm.getInstruction().isBlank()) {
+                    sb.append(" [").append(pm.getInstruction()).append("]");
+                }
+                sb.append("\n");
+            }
+            medicinesSummary = sb.toString().trim();
+        }
+        if (medicinesSummary == null || medicinesSummary.isBlank()) {
+            medicinesSummary = "No medicines specified";
         }
 
         // --- Validate & build PrescriptionDiagnosis list ---
@@ -119,18 +157,21 @@ public class PrescriptionService {
         if (existing.isPresent()) {
             prescription = existing.get();
             prescription.setDiagnosis(null); // clear legacy field on update
-            prescription.setMedicines(request.getMedicines());
+            prescription.setMedicines(medicinesSummary);
             prescription.setAdvice(request.getAdvice());
             
-            // Delete old diagnosis items from DB first to ensure clean replacement
+            // Delete old diagnosis and medicine items from DB first to ensure clean replacement
             prescriptionDiagnosisRepository.deleteByPrescriptionId(prescription.getId());
             prescription.getPrescriptionDiagnoses().clear();
+
+            prescriptionMedicineRepository.deleteByPrescriptionId(prescription.getId());
+            prescription.getPrescriptionMedicines().clear();
         } else {
             prescription = Prescription.builder()
                     .appointment(appointment)
                     .doctor(doctor)
                     .patient(appointment.getPatient())
-                    .medicines(request.getMedicines())
+                    .medicines(medicinesSummary)
                     .advice(request.getAdvice())
                     .build();
         }
@@ -141,6 +182,12 @@ public class PrescriptionService {
         for (PrescriptionDiagnosis pd : diagnosisList) {
             pd.setPrescription(prescription);
             prescription.getPrescriptionDiagnoses().add(pd);
+        }
+
+        // Link each PrescriptionMedicine to the prescription
+        for (PrescriptionMedicine pm : medicineList) {
+            pm.setPrescription(prescription);
+            prescription.getPrescriptionMedicines().add(pm);
         }
 
         return prescriptionRepository.save(prescription);
@@ -156,6 +203,48 @@ public class PrescriptionService {
 
     public List<Prescription> getPrescriptionsByDoctorId(Long doctorId) {
         return prescriptionRepository.findByDoctorId(doctorId);
+    }
+
+    public List<String> getMedicineSuggestions(String query) {
+        String q = query != null ? query.trim() : "";
+        List<String> dbResults = prescriptionMedicineRepository.findDistinctNamesByQuery(q);
+        Set<String> set = new LinkedHashSet<>(dbResults);
+
+        List<String> defaults = List.of(
+            "Napa 500mg", "Napa Extra 500mg/65mg", "Paracetamol 500mg", "Ace 500mg", "Ace Plus 500mg/65mg",
+            "Seclo 20mg", "Sergel 20mg", "Maxpro 20mg", "Pantonix 20mg", "Esomeprazole 20mg",
+            "Alatrol 10mg", "Fexo 120mg", "Fexo 180mg", "Ceevit 250mg", "Bextram Gold",
+            "Tylace 100mg", "Azithrocin 500mg", "Ciprocin 500mg", "Flexi 50mg", "Monas 10mg",
+            "Clofenac 50mg", "Entacyd 200ml", "Tofen 1mg/5ml", "Histacin 4mg", "Tavegyl 1mg"
+        );
+
+        for (String def : defaults) {
+            if (q.isBlank() || def.toLowerCase().contains(q.toLowerCase())) {
+                set.add(def);
+            }
+        }
+
+        return new ArrayList<>(set);
+    }
+
+    public List<String> getInstructionSuggestions(String query) {
+        String q = query != null ? query.trim() : "";
+        List<String> dbResults = prescriptionMedicineRepository.findDistinctInstructionsByQuery(q);
+        Set<String> set = new LinkedHashSet<>(dbResults);
+
+        List<String> defaults = List.of(
+            "After meal", "Before meal", "At bedtime", "Empty stomach in the morning",
+            "With water", "In the morning", "Twice daily after meal", "Three times daily after meal",
+            "As needed for pain", "Before sleeping", "After breakfast", "After dinner"
+        );
+
+        for (String def : defaults) {
+            if (q.isBlank() || def.toLowerCase().contains(q.toLowerCase())) {
+                set.add(def);
+            }
+        }
+
+        return new ArrayList<>(set);
     }
 
     private DiscountType parseDiscountType(String type) {

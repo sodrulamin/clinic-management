@@ -7,6 +7,7 @@ import java.util.List;
 public class PrescriptionRequest {
     private Long appointmentId;
     private List<PrescriptionDiagnosisDto> diagnoses; // structured multi-diagnosis list
+    private List<PrescriptionMedicineDto> medicinesList; // structured medicines list
     private String medicines;
     private String advice;
     private String reason;   // reason for visit

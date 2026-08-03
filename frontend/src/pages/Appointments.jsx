@@ -715,9 +715,36 @@ export const Appointments = () => {
                     <span style={{ fontSize: '1.6rem', fontWeight: 900, fontFamily: 'serif', color: 'var(--primary)' }}>Rx</span>
                     <h5 style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Prescribed Medications</h5>
                   </div>
-                  <div style={{ backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', padding: '14px', borderRadius: '10px', fontSize: '0.92rem', lineHeight: 1.7, whiteSpace: 'pre-wrap', fontFamily: 'Courier New, monospace, sans-serif' }}>
-                    {activePrescription.medicines}
-                  </div>
+                  {activePrescription.prescriptionMedicines && activePrescription.prescriptionMedicines.length > 0 ? (
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.86rem' }}>
+                      <thead>
+                        <tr style={{ backgroundColor: 'var(--table-header-bg)' }}>
+                          <th style={{ textAlign: 'left', padding: '7px 10px', borderBottom: '1px solid var(--border-color)', fontWeight: 700, width: '35px' }}>#</th>
+                          <th style={{ textAlign: 'left', padding: '7px 10px', borderBottom: '1px solid var(--border-color)', fontWeight: 700, width: '70px' }}>Type</th>
+                          <th style={{ textAlign: 'left', padding: '7px 10px', borderBottom: '1px solid var(--border-color)', fontWeight: 700 }}>Medicine Name</th>
+                          <th style={{ textAlign: 'left', padding: '7px 10px', borderBottom: '1px solid var(--border-color)', fontWeight: 700, width: '90px' }}>Doses</th>
+                          <th style={{ textAlign: 'left', padding: '7px 10px', borderBottom: '1px solid var(--border-color)', fontWeight: 700 }}>Instruction</th>
+                          <th style={{ textAlign: 'left', padding: '7px 10px', borderBottom: '1px solid var(--border-color)', fontWeight: 700, width: '100px' }}>Duration</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {activePrescription.prescriptionMedicines.map((pm, i) => (
+                          <tr key={pm.id || i} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                            <td style={{ padding: '7px 10px', color: 'var(--text-muted)' }}>{i + 1}</td>
+                            <td style={{ padding: '7px 10px', fontWeight: 600, color: 'var(--primary)' }}>{pm.type}</td>
+                            <td style={{ padding: '7px 10px', fontWeight: 700 }}>{pm.name}</td>
+                            <td style={{ padding: '7px 10px', fontWeight: 600 }}>{pm.doses || '—'}</td>
+                            <td style={{ padding: '7px 10px', color: 'var(--text-muted)', fontStyle: 'italic' }}>{pm.instruction || '—'}</td>
+                            <td style={{ padding: '7px 10px', fontWeight: 600 }}>{pm.duration || '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <div style={{ backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', padding: '14px', borderRadius: '10px', fontSize: '0.92rem', lineHeight: 1.7, whiteSpace: 'pre-wrap', fontFamily: 'Courier New, monospace, sans-serif' }}>
+                      {activePrescription.medicines}
+                    </div>
+                  )}
                 </div>
 
                 {/* Advice */}

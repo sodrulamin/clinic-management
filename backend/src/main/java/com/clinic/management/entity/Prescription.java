@@ -46,6 +46,11 @@ public class Prescription {
     @OneToMany(mappedBy = "prescription", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<PrescriptionDiagnosis> prescriptionDiagnoses = new ArrayList<>();
 
+    /** Structured medicines list. */
+    @Builder.Default
+    @OneToMany(mappedBy = "prescription", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private List<PrescriptionMedicine> prescriptionMedicines = new ArrayList<>();
+
     private LocalDateTime createdAt;
 
     @PrePersist

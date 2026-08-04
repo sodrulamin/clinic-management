@@ -925,12 +925,14 @@ body,
   .card-header {
     flex-direction: column;
     align-items: stretch;
-    gap: 12px;
+    gap: 10px !important;
+    margin-bottom: 10px !important;
   }
 
   .stats-grid {
     grid-template-columns: 1fr !important;
-    gap: 12px;
+    gap: 10px;
+    margin-bottom: 10px !important;
   }
 
   .stat-card {

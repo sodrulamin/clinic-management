@@ -390,9 +390,10 @@ export const Appointments = () => {
 
       <div className="card">
         <div className="card-header" style={{ flexWrap: 'wrap', gap: '12px' }}>
-          <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="filter-bar-group">
             <div className="card-title">Scheduled Appointments</div>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', backgroundColor: 'var(--bg-muted, rgba(0,0,0,0.03))', padding: '4px 10px', borderRadius: '8px' }}>
+
+            <div className="filter-pill">
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 500 }}>From:</label>
                 <input type="date" className="form-input" style={{ width: 'auto', padding: '4px 8px', fontSize: '0.82rem' }} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
@@ -409,14 +410,13 @@ export const Appointments = () => {
             </div>
 
             {!isDoctor && doctors.length > 0 && (
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', backgroundColor: 'var(--bg-muted, rgba(0,0,0,0.03))', padding: '4px 10px', borderRadius: '8px' }}>
+              <div className="filter-pill">
                 <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <Stethoscope size={14} color="var(--primary)" />
                   <span>Doctor:</span>
                 </label>
                 <select
-                  className="form-select"
-                  style={{ width: 'auto', padding: '4px 8px', fontSize: '0.82rem', height: '30px' }}
+                  className="form-select filter-select"
                   value={selectedDoctorId}
                   onChange={(e) => setSelectedDoctorId(e.target.value)}
                 >
@@ -428,7 +428,7 @@ export const Appointments = () => {
                   ))}
                 </select>
                 {selectedDoctorId !== 'ALL' && (
-                  <button className="btn btn-secondary btn-sm" onClick={() => setSelectedDoctorId('ALL')} style={{ padding: '4px 8px', fontSize: '0.78rem' }}>
+                  <button className="btn btn-secondary btn-sm" onClick={() => setSelectedDoctorId('ALL')} style={{ padding: '4px 8px', fontSize: '0.78rem', flexShrink: 0 }}>
                     Reset Doctor
                   </button>
                 )}

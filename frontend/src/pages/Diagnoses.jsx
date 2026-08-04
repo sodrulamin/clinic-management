@@ -152,7 +152,7 @@ export const Diagnoses = () => {
   return (
     <div>
       {/* Top Header Metrics & Title */}
-      <div className="stats-grid" style={{ marginBottom: '20px' }}>
+      <div className="stats-grid" style={{ marginBottom: '14px' }}>
         <div className="stat-card">
           <div className="stat-icon teal">
             <Activity />
@@ -185,15 +185,15 @@ export const Diagnoses = () => {
       </div>
 
       {/* Main Table Card */}
-      <div className="card">
-        <div className="card-header" style={{ flexWrap: 'wrap', gap: '12px' }}>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: '1 1 300px' }}>
+      <div className="card" style={{ padding: '16px 20px' }}>
+        <div className="card-header" style={{ flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flex: '1 1 300px' }}>
             <div style={{ position: 'relative', flex: 1 }}>
-              <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <Search size={15} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
               <input
                 type="text"
                 className="form-input"
-                style={{ paddingLeft: '36px' }}
+                style={{ paddingLeft: '32px', height: '36px', fontSize: '0.86rem' }}
                 placeholder="Search diagnosis by name, ICD code, category..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -201,7 +201,7 @@ export const Diagnoses = () => {
             </div>
             <select
               className="form-select"
-              style={{ width: 'auto', minWidth: '160px' }}
+              style={{ width: 'auto', minWidth: '150px', height: '36px', fontSize: '0.86rem' }}
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
             >
@@ -214,7 +214,7 @@ export const Diagnoses = () => {
           </div>
 
           {isAdmin && (
-            <button className="btn btn-primary" onClick={handleOpenAdd}>
+            <button className="btn btn-primary" onClick={handleOpenAdd} style={{ height: '36px', padding: '0 14px', fontSize: '0.86rem' }}>
               <Plus size={16} />
               <span>Add New Diagnosis</span>
             </button>

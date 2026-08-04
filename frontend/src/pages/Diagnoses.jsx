@@ -187,7 +187,7 @@ export const Diagnoses = () => {
       {/* Main Table Card */}
       <div className="card">
         <div className="card-header" style={{ flexWrap: 'wrap', gap: '12px' }}>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: '1 1 300px' }}>
+          <div className="search-filter-group" style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: '1 1 300px' }}>
             <div style={{ position: 'relative', flex: 1 }}>
               <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
               <input

@@ -929,6 +929,10 @@ body,
     margin-bottom: 6px !important;
   }
 
+  .search-filter-group {
+    flex: 1 1 40px !important;
+  }
+
   .card-header .form-input,
   .card-header .form-select {
     padding: 6px 10px !important;

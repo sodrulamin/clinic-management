@@ -31,6 +31,11 @@ export const Appointments = () => {
   const [endDate, setEndDate] = useState(today);
   const [selectedDoctorId, setSelectedDoctorId] = useState('ALL');
 
+  // Text filters
+  const [searchPatientPhone, setSearchPatientPhone] = useState('');
+  const [searchPatientName, setSearchPatientName] = useState('');
+  const [searchReason, setSearchReason] = useState('');
+
   const [appointments, setAppointments] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [patients, setPatients] = useState([]);
@@ -39,6 +44,29 @@ export const Appointments = () => {
     todayAppointments: 0,
     todayVisited: 0,
     todayIncome: 0,
+  });
+
+  // Filtered Appointments
+  const filteredAppointments = appointments.filter((app) => {
+    if (searchPatientName.trim()) {
+      const qName = searchPatientName.toLowerCase().trim();
+      const pName = app.patient?.fullName ? app.patient.fullName.toLowerCase() : '';
+      if (!pName.includes(qName)) return false;
+    }
+
+    if (searchPatientPhone.trim()) {
+      const qPhone = searchPatientPhone.trim();
+      const pPhone = app.patient?.phone ? app.patient.phone.trim() : '';
+      if (!pPhone.includes(qPhone)) return false;
+    }
+
+    if (searchReason.trim()) {
+      const qReason = searchReason.toLowerCase().trim();
+      const appReason = app.reason ? app.reason.toLowerCase() : '';
+      if (!appReason.includes(qReason)) return false;
+    }
+
+    return true;
   });
 
   // Modal States
@@ -441,6 +469,79 @@ export const Appointments = () => {
           </button>
         </div>
 
+        {/* Text Filters Section */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+            gap: '10px',
+            marginBottom: '16px',
+            backgroundColor: 'var(--table-header-bg)',
+            padding: '10px 14px',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid var(--border-color)',
+            alignItems: 'flex-end',
+          }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+              Patient Phone / Mobile:
+            </label>
+            <input
+              type="text"
+              className="form-input"
+              style={{ height: '32px', fontSize: '0.82rem', padding: '4px 10px' }}
+              placeholder="e.g. 01700..."
+              value={searchPatientPhone}
+              onChange={(e) => setSearchPatientPhone(e.target.value)}
+            />
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+              Patient Name:
+            </label>
+            <input
+              type="text"
+              className="form-input"
+              style={{ height: '32px', fontSize: '0.82rem', padding: '4px 10px' }}
+              placeholder="Filter by name..."
+              value={searchPatientName}
+              onChange={(e) => setSearchPatientName(e.target.value)}
+            />
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+              Reason Text / Symptoms:
+            </label>
+            <input
+              type="text"
+              className="form-input"
+              style={{ height: '32px', fontSize: '0.82rem', padding: '4px 10px' }}
+              placeholder="Filter by reason text..."
+              value={searchReason}
+              onChange={(e) => setSearchReason(e.target.value)}
+            />
+          </div>
+
+          {(searchPatientPhone || searchPatientName || searchReason) && (
+            <div>
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => {
+                  setSearchPatientPhone('');
+                  setSearchPatientName('');
+                  setSearchReason('');
+                }}
+                style={{ height: '32px', fontSize: '0.78rem', width: '100%' }}
+              >
+                Clear Text Filters
+              </button>
+            </div>
+          )}
+        </div>
+
         <div className="table-responsive">
           <table className="custom-table">
             <thead>
@@ -455,7 +556,14 @@ export const Appointments = () => {
               </tr>
             </thead>
             <tbody>
-              {appointments.map((app) => (
+              {filteredAppointments.length === 0 ? (
+                <tr>
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
+                    No appointments matching search filters.
+                  </td>
+                </tr>
+              ) : (
+                filteredAppointments.map((app) => (
                 <tr key={app.id}>
                   <td>
                     <strong>{app.appointmentDate}</strong>
@@ -530,7 +638,7 @@ export const Appointments = () => {
                     </div>
                   </td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>

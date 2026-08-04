@@ -28,7 +28,7 @@ public class AppointmentService {
     private final UserRepository userRepository;
     private final AppointmentSlotService appointmentSlotService;
 
-    public List<Appointment> getAllAppointments(Authentication authentication, LocalDate startDate, LocalDate endDate, Boolean allDates) {
+    public List<Appointment> getAllAppointments(Authentication authentication, LocalDate startDate, LocalDate endDate, Boolean allDates, Long targetDoctorId) {
         List<Appointment> list;
         if (authentication != null) {
             boolean isAdminOrRec = authentication.getAuthorities().stream()
@@ -60,6 +60,10 @@ public class AppointmentService {
             list = appointmentRepository.findAll();
         }
 
+        if (targetDoctorId != null) {
+            list = list.stream().filter(a -> a.getDoctor() != null && targetDoctorId.equals(a.getDoctor().getId())).toList();
+        }
+
         if (!Boolean.TRUE.equals(allDates)) {
             if (startDate != null) {
                 list = list.stream().filter(a -> a.getAppointmentDate() != null && !a.getAppointmentDate().isBefore(startDate)).toList();
@@ -76,7 +80,7 @@ public class AppointmentService {
         return appointmentRepository.findById(id);
     }
 
-    public Map<String, Object> getStats(Authentication authentication, LocalDate startDate, LocalDate endDate, Boolean allDates) {
+    public Map<String, Object> getStats(Authentication authentication, LocalDate startDate, LocalDate endDate, Boolean allDates, Long targetDoctorId) {
         Map<String, Object> stats = new HashMap<>();
 
         boolean isDoctor = false;
@@ -99,6 +103,8 @@ public class AppointmentService {
         List<Appointment> apps;
         if (isDoctor && doctor != null) {
             apps = appointmentRepository.findByDoctorId(doctor.getId());
+        } else if (targetDoctorId != null) {
+            apps = appointmentRepository.findByDoctorId(targetDoctorId);
         } else {
             apps = appointmentRepository.findAll();
         }

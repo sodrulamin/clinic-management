@@ -29,6 +29,7 @@ export const Appointments = () => {
   const today = new Date().toISOString().split('T')[0];
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
+  const [selectedDoctorId, setSelectedDoctorId] = useState('ALL');
 
   const [appointments, setAppointments] = useState([]);
   const [doctors, setDoctors] = useState([]);
@@ -143,6 +144,9 @@ export const Appointments = () => {
       if (startDate) params.append('startDate', startDate);
       if (endDate) params.append('endDate', endDate);
       if (!startDate && !endDate) params.append('allDates', 'true');
+      if (selectedDoctorId && selectedDoctorId !== 'ALL') {
+        params.append('doctorId', selectedDoctorId);
+      }
 
       if (params.toString()) {
         appUrl += `?${params.toString()}`;
@@ -173,7 +177,7 @@ export const Appointments = () => {
 
   useEffect(() => {
     fetchData();
-  }, [startDate, endDate]);
+  }, [startDate, endDate, selectedDoctorId]);
 
   // ─── Booking ────────────────────────────────────────────────────────────────
 
@@ -403,6 +407,33 @@ export const Appointments = () => {
                 </button>
               )}
             </div>
+
+            {!isDoctor && doctors.length > 0 && (
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', backgroundColor: 'var(--bg-muted, rgba(0,0,0,0.03))', padding: '4px 10px', borderRadius: '8px' }}>
+                <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Stethoscope size={14} color="var(--primary)" />
+                  <span>Doctor:</span>
+                </label>
+                <select
+                  className="form-select"
+                  style={{ width: 'auto', padding: '4px 8px', fontSize: '0.82rem', height: '30px' }}
+                  value={selectedDoctorId}
+                  onChange={(e) => setSelectedDoctorId(e.target.value)}
+                >
+                  <option value="ALL">-- All Doctors --</option>
+                  {doctors.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.fullName} ({d.specialization})
+                    </option>
+                  ))}
+                </select>
+                {selectedDoctorId !== 'ALL' && (
+                  <button className="btn btn-secondary btn-sm" onClick={() => setSelectedDoctorId('ALL')} style={{ padding: '4px 8px', fontSize: '0.78rem' }}>
+                    Reset Doctor
+                  </button>
+                )}
+              </div>
+            )}
           </div>
           <button className="btn btn-primary" onClick={() => setShowModal(true)}>
             <Plus size={16} />

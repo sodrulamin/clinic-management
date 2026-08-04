@@ -28,8 +28,9 @@ public class AppointmentController {
             Authentication authentication,
             @RequestParam(required = false) LocalDate startDate,
             @RequestParam(required = false) LocalDate endDate,
-            @RequestParam(required = false) Boolean allDates) {
-        return ResponseEntity.ok(appointmentService.getAllAppointments(authentication, startDate, endDate, allDates));
+            @RequestParam(required = false) Boolean allDates,
+            @RequestParam(required = false) Long doctorId) {
+        return ResponseEntity.ok(appointmentService.getAllAppointments(authentication, startDate, endDate, allDates, doctorId));
     }
 
     @GetMapping("/{id}")
@@ -46,8 +47,9 @@ public class AppointmentController {
             Authentication authentication,
             @RequestParam(required = false) LocalDate startDate,
             @RequestParam(required = false) LocalDate endDate,
-            @RequestParam(required = false) Boolean allDates) {
-        return ResponseEntity.ok(appointmentService.getStats(authentication, startDate, endDate, allDates));
+            @RequestParam(required = false) Boolean allDates,
+            @RequestParam(required = false) Long doctorId) {
+        return ResponseEntity.ok(appointmentService.getStats(authentication, startDate, endDate, allDates, doctorId));
     }
 
     @PostMapping

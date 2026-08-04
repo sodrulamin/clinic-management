@@ -933,6 +933,14 @@ body,
     flex: 1 1 40px !important;
   }
 
+  .search-input-wrapper .search-icon {
+    display: none !important;
+  }
+
+  .search-input-wrapper .search-input {
+    padding-left: 10px !important;
+  }
+
   .card-header .form-input,
   .card-header .form-select {
     padding: 6px 10px !important;

@@ -187,12 +187,12 @@ export const Diagnoses = () => {
       {/* Main Table Card */}
       <div className="card">
         <div className="card-header" style={{ flexWrap: 'wrap', gap: '12px' }}>
-          <div className="search-filter-group" style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: '1 1 300px' }}>
-            <div style={{ position: 'relative', flex: 1 }}>
-              <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+          <div className="search-filter-group" style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: '1 1 40px' }}>
+            <div className="search-input-wrapper" style={{ position: 'relative', flex: 1 }}>
+              <Search size={16} className="search-icon" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
               <input
                 type="text"
-                className="form-input"
+                className="form-input search-input"
                 style={{ paddingLeft: '36px' }}
                 placeholder="Search diagnosis by name, ICD code, category..."
                 value={search}

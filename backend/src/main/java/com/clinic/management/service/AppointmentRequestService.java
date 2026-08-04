@@ -19,11 +19,37 @@ public class AppointmentRequestService {
     private final AppointmentRepository appointmentRepository;
     private final AppointmentSlotService appointmentSlotService;
 
-    public List<AppointmentRequest> getAllRequests(AppointmentRequest.RequestStatus status) {
+    public List<AppointmentRequest> getAllRequests(
+            AppointmentRequest.RequestStatus status,
+            java.time.LocalDate startDate,
+            java.time.LocalDate endDate,
+            Long doctorId) {
+        List<AppointmentRequest> list;
         if (status != null) {
-            return requestRepository.findByStatus(status);
+            list = requestRepository.findByStatus(status);
+        } else {
+            list = requestRepository.findAll();
         }
-        return requestRepository.findAll();
+
+        if (doctorId != null) {
+            list = list.stream()
+                    .filter(r -> r.getDoctor() != null && doctorId.equals(r.getDoctor().getId()))
+                    .toList();
+        }
+
+        if (startDate != null) {
+            list = list.stream()
+                    .filter(r -> r.getPreferredDate() != null && !r.getPreferredDate().isBefore(startDate))
+                    .toList();
+        }
+
+        if (endDate != null) {
+            list = list.stream()
+                    .filter(r -> r.getPreferredDate() != null && !r.getPreferredDate().isAfter(endDate))
+                    .toList();
+        }
+
+        return list;
     }
 
     public AppointmentRequest createRequest(CreateRequestDto requestDto) {

@@ -21,8 +21,12 @@ public class AppointmentRequestController {
 
     @GetMapping
     @PreAuthorize("@securityService.hasAccess('/appointment-requests')")
-    public ResponseEntity<List<AppointmentRequest>> getAllRequests(@RequestParam(required = false) AppointmentRequest.RequestStatus status) {
-        return ResponseEntity.ok(requestService.getAllRequests(status));
+    public ResponseEntity<List<AppointmentRequest>> getAllRequests(
+            @RequestParam(required = false) AppointmentRequest.RequestStatus status,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
+            @RequestParam(required = false) Long doctorId) {
+        return ResponseEntity.ok(requestService.getAllRequests(status, startDate, endDate, doctorId));
     }
 
     @PostMapping

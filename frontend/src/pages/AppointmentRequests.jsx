@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
-import { ClipboardList, Check, X, Plus } from 'lucide-react';
+import { ClipboardList, Check, X, Plus, Calendar, Stethoscope } from 'lucide-react';
 
 export const AppointmentRequests = () => {
+  const today = new Date().toISOString().split('T')[0];
   const [requests, setRequests] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [startDate, setStartDate] = useState(today);
+  const [endDate, setEndDate] = useState(today);
   const [filterStatus, setFilterStatus] = useState('ALL');
+  const [selectedDoctorId, setSelectedDoctorId] = useState('ALL');
 
   const [formData, setFormData] = useState({
     patientName: '',
@@ -24,7 +28,13 @@ export const AppointmentRequests = () => {
 
   const fetchRequests = async () => {
     try {
-      const url = filterStatus === 'ALL' ? '/appointment-requests' : `/appointment-requests?status=${filterStatus}`;
+      const params = new URLSearchParams();
+      if (filterStatus && filterStatus !== 'ALL') params.append('status', filterStatus);
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+      if (selectedDoctorId && selectedDoctorId !== 'ALL') params.append('doctorId', selectedDoctorId);
+
+      const url = params.toString() ? `/appointment-requests?${params.toString()}` : '/appointment-requests';
       const res = await api.get(url);
       setRequests(res.data);
     } catch (err) {
@@ -57,7 +67,7 @@ export const AppointmentRequests = () => {
     fetchRequests();
     fetchDoctors();
     fetchPatients();
-  }, [filterStatus]);
+  }, [filterStatus, startDate, endDate, selectedDoctorId]);
 
   const matchingPatients = formData.patientPhone.trim().length >= 3
     ? patients.filter((p) => p.phone && p.phone.trim().includes(formData.patientPhone.trim()))
@@ -123,11 +133,13 @@ export const AppointmentRequests = () => {
     <div>
       <div className="card">
         <div className="card-header" style={{ flexWrap: 'wrap', gap: '12px' }}>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
             <div className="card-title">Appointment Requests Queue</div>
+
+            {/* Status Filter */}
             <select
               className="form-select"
-              style={{ width: 'auto', padding: '6px 12px' }}
+              style={{ width: 'auto', padding: '4px 10px', fontSize: '0.82rem', height: '30px' }}
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
             >
@@ -136,6 +148,51 @@ export const AppointmentRequests = () => {
               <option value="APPROVED">Approved</option>
               <option value="REJECTED">Rejected</option>
             </select>
+
+            {/* Date Filter */}
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', backgroundColor: 'var(--bg-muted, rgba(0,0,0,0.03))', padding: '4px 10px', borderRadius: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 500 }}>From:</label>
+                <input type="date" className="form-input" style={{ width: 'auto', padding: '4px 8px', fontSize: '0.82rem' }} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 500 }}>To:</label>
+                <input type="date" className="form-input" style={{ width: 'auto', padding: '4px 8px', fontSize: '0.82rem' }} value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+              </div>
+              {(startDate || endDate) && (
+                <button className="btn btn-secondary btn-sm" onClick={() => { setStartDate(''); setEndDate(''); }} style={{ padding: '4px 8px', fontSize: '0.78rem' }}>
+                  All Dates
+                </button>
+              )}
+            </div>
+
+            {/* Doctor Filter */}
+            {doctors.length > 0 && (
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', backgroundColor: 'var(--bg-muted, rgba(0,0,0,0.03))', padding: '4px 10px', borderRadius: '8px' }}>
+                <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Stethoscope size={14} color="var(--primary)" />
+                  <span>Doctor:</span>
+                </label>
+                <select
+                  className="form-select"
+                  style={{ width: 'auto', padding: '4px 8px', fontSize: '0.82rem', height: '30px' }}
+                  value={selectedDoctorId}
+                  onChange={(e) => setSelectedDoctorId(e.target.value)}
+                >
+                  <option value="ALL">-- All Doctors --</option>
+                  {doctors.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.fullName} ({d.specialization})
+                    </option>
+                  ))}
+                </select>
+                {selectedDoctorId !== 'ALL' && (
+                  <button className="btn btn-secondary btn-sm" onClick={() => setSelectedDoctorId('ALL')} style={{ padding: '4px 8px', fontSize: '0.78rem' }}>
+                    Reset Doctor
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           <button className="btn btn-primary" onClick={() => setShowModal(true)}>

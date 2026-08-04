@@ -1,21 +1,33 @@
 import React, { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { ThemeContext } from '../context/ThemeContext';
-import { User, Bell, Sun, Moon } from 'lucide-react';
+import { User, Bell, Sun, Moon, Menu } from 'lucide-react';
 
-export const Navbar = ({ title }) => {
+export const Navbar = ({ title, onToggleMobileSidebar }) => {
   const { user } = useContext(AuthContext);
   const { theme, toggleTheme } = useContext(ThemeContext);
 
   return (
     <header className="header-navbar">
-      <div className="header-title">
-        <h2>{title}</h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <button
+          type="button"
+          className="mobile-menu-btn"
+          onClick={onToggleMobileSidebar}
+          title="Toggle Mobile Navigation Menu"
+        >
+          <Menu size={20} />
+        </button>
+
+        <div className="header-title">
+          <h2>{title}</h2>
+        </div>
       </div>
 
-      <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+      <div className="header-actions">
         <button
           onClick={toggleTheme}
+          className="theme-toggle-btn"
           title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Theme`}
           style={{
             background: 'var(--bg-card)',
@@ -36,23 +48,23 @@ export const Navbar = ({ title }) => {
           {theme === 'light' ? (
             <>
               <Moon size={16} color="#6366f1" />
-              <span>Dark Mode</span>
+              <span className="hide-mobile-text">Dark Mode</span>
             </>
           ) : (
             <>
               <Sun size={16} color="#f59e0b" />
-              <span>Light Mode</span>
+              <span className="hide-mobile-text">Light Mode</span>
             </>
           )}
         </button>
 
-        <div style={{ padding: '8px', borderRadius: '50%', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="header-icon-btn">
           <Bell size={18} />
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)' }}>
+        <div className="header-user-pill">
           <User size={18} color="var(--primary)" />
-          <span>{user?.username}</span>
+          <span className="hide-mobile-text">{user?.username}</span>
         </div>
       </div>
     </header>

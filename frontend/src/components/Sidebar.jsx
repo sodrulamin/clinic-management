@@ -31,7 +31,7 @@ const MAX_WIDTH = 450;
 const DEFAULT_EXPANDED_WIDTH = 260;
 const COLLAPSE_THRESHOLD = 130;
 
-export const Sidebar = () => {
+export const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
   const { user, logout } = useContext(AuthContext);
 
   const [sidebarWidth, setSidebarWidth] = useState(() => {
@@ -110,72 +110,83 @@ export const Sidebar = () => {
   const menus = user?.menus || [];
 
   return (
-    <aside
-      className={`sidebar ${isCollapsed ? 'collapsed' : ''} ${isDragging ? 'is-dragging' : ''}`}
-      style={{ width: `${sidebarWidth}px` }}
-    >
-      {/* Resizer Handle Edge */}
-      <div
-        className="sidebar-resizer"
-        onMouseDown={handleMouseDown}
-        onDoubleClick={handleDoubleClickEdge}
-        title="Drag to adjust width | Double click edge to toggle minimize/maximize"
-      />
+    <>
+      {/* Mobile Backdrop Overlay */}
+      {isMobileOpen && (
+        <div
+          className="sidebar-backdrop"
+          onClick={onCloseMobile}
+        />
+      )}
 
-      <div className="sidebar-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden' }}>
-          <div className="sidebar-logo-icon">
-            <Activity size={22} />
+      <aside
+        className={`sidebar ${isCollapsed ? 'collapsed' : ''} ${isDragging ? 'is-dragging' : ''} ${isMobileOpen ? 'mobile-open' : ''}`}
+        style={{ width: `${sidebarWidth}px` }}
+      >
+        {/* Resizer Handle Edge */}
+        <div
+          className="sidebar-resizer"
+          onMouseDown={handleMouseDown}
+          onDoubleClick={handleDoubleClickEdge}
+          title="Drag to adjust width | Double click edge to toggle minimize/maximize"
+        />
+
+        <div className="sidebar-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden' }}>
+            <div className="sidebar-logo-icon">
+              <Activity size={22} />
+            </div>
+            <div className="sidebar-logo-text">CarePulse</div>
           </div>
-          <div className="sidebar-logo-text">CarePulse</div>
+
+          <button
+            className="sidebar-toggle-btn"
+            onClick={toggleSidebar}
+            title={isCollapsed ? 'Expand Sidebar' : 'Minimize Sidebar'}
+          >
+            {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          </button>
         </div>
 
-        <button
-          className="sidebar-toggle-btn"
-          onClick={toggleSidebar}
-          title={isCollapsed ? 'Expand Sidebar' : 'Minimize Sidebar'}
-        >
-          {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-        </button>
-      </div>
+        <nav className="sidebar-nav">
+          {menus.map((menu) => {
+            const IconComponent = iconMap[menu.icon] || LayoutDashboard;
+            return (
+              <NavLink
+                key={menu.id}
+                to={menu.path}
+                onClick={onCloseMobile}
+                title={isCollapsed ? menu.title : ''}
+                className={({ isActive }) =>
+                  `sidebar-link ${isActive ? 'active' : ''}`
+                }
+              >
+                <IconComponent size={19} />
+                <span>{menu.title}</span>
+              </NavLink>
+            );
+          })}
+        </nav>
 
-      <nav className="sidebar-nav">
-        {menus.map((menu) => {
-          const IconComponent = iconMap[menu.icon] || LayoutDashboard;
-          return (
-            <NavLink
-              key={menu.id}
-              to={menu.path}
-              title={isCollapsed ? menu.title : ''}
-              className={({ isActive }) =>
-                `sidebar-link ${isActive ? 'active' : ''}`
-              }
-            >
-              <IconComponent size={19} />
-              <span>{menu.title}</span>
-            </NavLink>
-          );
-        })}
-      </nav>
-
-      <div className="sidebar-user">
-        <div className="user-info">
-          <div className="user-avatar" title={isCollapsed ? `${user?.fullName} (${user?.role?.replace('ROLE_', '')})` : ''}>
-            {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
+        <div className="sidebar-user">
+          <div className="user-info">
+            <div className="user-avatar" title={isCollapsed ? `${user?.fullName} (${user?.role?.replace('ROLE_', '')})` : ''}>
+              {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
+            </div>
+            <div className="user-details">
+              <h4>{user?.fullName}</h4>
+              <span>{user?.role?.replace('ROLE_', '')}</span>
+            </div>
           </div>
-          <div className="user-details">
-            <h4>{user?.fullName}</h4>
-            <span>{user?.role?.replace('ROLE_', '')}</span>
-          </div>
+          <button
+            onClick={logout}
+            title="Logout"
+            style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+          >
+            <LogOut size={18} />
+          </button>
         </div>
-        <button
-          onClick={logout}
-          title="Logout"
-          style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
-        >
-          <LogOut size={18} />
-        </button>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { Sidebar } from './Sidebar';
@@ -6,6 +6,15 @@ import { Navbar } from './Navbar';
 
 export const ProtectedRoute = ({ pageTitle }) => {
   const { token, loading } = useContext(AuthContext);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
+  const toggleMobileSidebar = () => {
+    setIsMobileSidebarOpen((prev) => !prev);
+  };
+
+  const closeMobileSidebar = () => {
+    setIsMobileSidebarOpen(false);
+  };
 
   if (loading) {
     return (
@@ -21,9 +30,9 @@ export const ProtectedRoute = ({ pageTitle }) => {
 
   return (
     <div className="app-container">
-      <Sidebar />
+      <Sidebar isMobileOpen={isMobileSidebarOpen} onCloseMobile={closeMobileSidebar} />
       <div className="main-wrapper">
-        <Navbar title={pageTitle} />
+        <Navbar title={pageTitle} onToggleMobileSidebar={toggleMobileSidebar} />
         <main className="content-area">
           <Outlet />
         </main>

@@ -3,6 +3,7 @@ package com.clinic.management.service;
 import com.clinic.management.dto.UserRequest;
 import com.clinic.management.entity.Role;
 import com.clinic.management.entity.User;
+import com.clinic.management.entity.UserProfile;
 import com.clinic.management.repository.RoleRepository;
 import com.clinic.management.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -37,9 +38,11 @@ public class UserService {
         User user = User.builder()
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .fullName(request.getFullName())
-                .email(request.getEmail())
-                .phone(request.getPhone())
+                .userProfile(UserProfile.builder()
+                        .fullName(request.getFullName())
+                        .email(request.getEmail())
+                        .phone(request.getPhone())
+                        .build())
                 .role(role)
                 .active(request.getActive() != null ? request.getActive() : true)
                 .build();

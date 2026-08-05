@@ -2,7 +2,6 @@ package com.clinic.management.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -23,13 +22,9 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    @Column(nullable = false)
-    private String fullName;
-
-    @Column(unique = true, nullable = false)
-    private String email;
-
-    private String phone;
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JoinColumn(name = "profile_id")
+    private UserProfile userProfile;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "role_id", nullable = false)
@@ -38,10 +33,34 @@ public class User {
     @Builder.Default
     private boolean active = true;
 
-    private LocalDateTime createdAt;
+    private UserProfile ensureProfile() {
+        if (this.userProfile == null) {
+            this.userProfile = new UserProfile();
+        }
+        return this.userProfile;
+    }
 
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
+    public String getFullName() {
+        return userProfile != null ? userProfile.getFullName() : null;
+    }
+
+    public void setFullName(String fullName) {
+        ensureProfile().setFullName(fullName);
+    }
+
+    public String getEmail() {
+        return userProfile != null ? userProfile.getEmail() : null;
+    }
+
+    public void setEmail(String email) {
+        ensureProfile().setEmail(email);
+    }
+
+    public String getPhone() {
+        return userProfile != null ? userProfile.getPhone() : null;
+    }
+
+    public void setPhone(String phone) {
+        ensureProfile().setPhone(phone);
     }
 }

@@ -16,20 +16,15 @@ public class Doctor {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
-    private String fullName;
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JoinColumn(name = "profile_id")
+    private UserProfile userProfile;
 
     @Column(nullable = false, length = 100)
     private String specialization;
 
     @Column(length = 150)
     private String qualification;
-
-    @Column(length = 20)
-    private String phone;
-
-    @Column(length = 100)
-    private String email;
 
     @Column(length = 50)
     private String roomNo;
@@ -45,10 +40,7 @@ public class Doctor {
     private Double maxDiscountFixed = 0.0;
 
     @Column(length = 100)
-    private String workingHours; // e.g. Mon-Fri 09:00 - 17:00
-
-    @Column(columnDefinition = "LONGTEXT")
-    private String profileImage;
+    private String workingHours;
 
     @Builder.Default
     @Column(nullable = false)
@@ -57,7 +49,42 @@ public class Doctor {
     @Builder.Default
     private boolean active = true;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "user_id")
-    private User user;
+    private UserProfile ensureProfile() {
+        if (this.userProfile == null) {
+            this.userProfile = new UserProfile();
+        }
+        return this.userProfile;
+    }
+
+    public String getFullName() {
+        return userProfile != null ? userProfile.getFullName() : null;
+    }
+
+    public void setFullName(String fullName) {
+        ensureProfile().setFullName(fullName);
+    }
+
+    public String getEmail() {
+        return userProfile != null ? userProfile.getEmail() : null;
+    }
+
+    public void setEmail(String email) {
+        ensureProfile().setEmail(email);
+    }
+
+    public String getPhone() {
+        return userProfile != null ? userProfile.getPhone() : null;
+    }
+
+    public void setPhone(String phone) {
+        ensureProfile().setPhone(phone);
+    }
+
+    public String getProfileImage() {
+        return userProfile != null ? userProfile.getProfileImage() : null;
+    }
+
+    public void setProfileImage(String profileImage) {
+        ensureProfile().setProfileImage(profileImage);
+    }
 }

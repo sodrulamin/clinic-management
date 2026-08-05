@@ -18,22 +18,9 @@ public class Patient {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
-    private String fullName;
-
-    private Integer age;
-
-    @Column(length = 20)
-    private String gender;
-
-    @Column(nullable = false, length = 20)
-    private String phone;
-
-    @Column(length = 100)
-    private String email;
-
-    @Column(length = 255)
-    private String address;
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JoinColumn(name = "profile_id")
+    private UserProfile userProfile;
 
     @Column(length = 10)
     private String bloodGroup;
@@ -43,10 +30,66 @@ public class Patient {
 
     private LocalDate lastServedDate;
 
-    private LocalDateTime createdAt;
+    private UserProfile ensureProfile() {
+        if (this.userProfile == null) {
+            this.userProfile = new UserProfile();
+        }
+        return this.userProfile;
+    }
 
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
+    public String getFullName() {
+        return userProfile != null ? userProfile.getFullName() : null;
+    }
+
+    public void setFullName(String fullName) {
+        ensureProfile().setFullName(fullName);
+    }
+
+    public Integer getAge() {
+        return userProfile != null ? userProfile.getAge() : null;
+    }
+
+    public void setAge(Integer age) {
+        ensureProfile().setAge(age);
+    }
+
+    public String getGender() {
+        return userProfile != null ? userProfile.getGender() : null;
+    }
+
+    public void setGender(String gender) {
+        ensureProfile().setGender(gender);
+    }
+
+    public String getPhone() {
+        return userProfile != null ? userProfile.getPhone() : null;
+    }
+
+    public void setPhone(String phone) {
+        ensureProfile().setPhone(phone);
+    }
+
+    public String getEmail() {
+        return userProfile != null ? userProfile.getEmail() : null;
+    }
+
+    public void setEmail(String email) {
+        ensureProfile().setEmail(email);
+    }
+
+    public String getAddress() {
+        return userProfile != null ? userProfile.getAddress() : null;
+    }
+
+    public void setAddress(String address) {
+        ensureProfile().setAddress(address);
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return userProfile != null ? userProfile.getCreatedAt() : null;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        ensureProfile().setCreatedAt(createdAt);
     }
 }

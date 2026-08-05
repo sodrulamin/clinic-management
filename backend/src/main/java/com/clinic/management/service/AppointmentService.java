@@ -5,6 +5,7 @@ import com.clinic.management.entity.Appointment;
 import com.clinic.management.entity.Doctor;
 import com.clinic.management.entity.Patient;
 import com.clinic.management.entity.User;
+import com.clinic.management.entity.UserProfile;
 import com.clinic.management.repository.AppointmentRepository;
 import com.clinic.management.repository.DoctorRepository;
 import com.clinic.management.repository.PatientRepository;
@@ -31,13 +32,15 @@ public class AppointmentService {
 
     private Doctor findDoctorForUser(User user) {
         if (user == null) return null;
-        Optional<Doctor> docOpt = doctorRepository.findByUserId(user.getId());
-        if (docOpt.isPresent()) {
-            return docOpt.get();
+        if (user.getUserProfile() != null && user.getUserProfile().getId() != null) {
+            Optional<Doctor> docOpt = doctorRepository.findByUserProfileId(user.getUserProfile().getId());
+            if (docOpt.isPresent()) {
+                return docOpt.get();
+            }
         }
         List<Doctor> allDocs = doctorRepository.findAll();
         return allDocs.stream()
-                .filter(d -> (d.getUser() != null && d.getUser().getId().equals(user.getId())) ||
+                .filter(d -> (d.getUserProfile() != null && user.getUserProfile() != null && d.getUserProfile().getId().equals(user.getUserProfile().getId())) ||
                         (user.getEmail() != null && user.getEmail().equalsIgnoreCase(d.getEmail())) ||
                         (user.getPhone() != null && user.getPhone().equals(d.getPhone())) ||
                         (user.getFullName() != null && user.getFullName().equalsIgnoreCase(d.getFullName())) ||
@@ -186,11 +189,13 @@ public class AppointmentService {
             }
         } else {
             patient = Patient.builder()
-                    .fullName(request.getPatientName() != null && !request.getPatientName().isBlank() ? request.getPatientName() : "New Patient")
-                    .phone(request.getPatientPhone())
-                    .email(request.getPatientEmail())
-                    .age(request.getAge())
-                    .gender(request.getGender())
+                    .userProfile(UserProfile.builder()
+                            .fullName(request.getPatientName() != null && !request.getPatientName().isBlank() ? request.getPatientName() : "New Patient")
+                            .phone(request.getPatientPhone())
+                            .email(request.getPatientEmail())
+                            .age(request.getAge())
+                            .gender(request.getGender())
+                            .build())
                     .build();
             patient = patientRepository.save(patient);
         }

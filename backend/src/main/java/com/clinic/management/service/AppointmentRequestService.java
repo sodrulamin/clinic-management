@@ -130,11 +130,13 @@ public class AppointmentRequestService {
 
     private Patient createNewPatientFromRequest(AppointmentRequest req) {
         return patientRepository.save(Patient.builder()
-                .fullName(req.getPatientName())
-                .phone(req.getPatientPhone())
-                .email(req.getPatientEmail())
-                .age(req.getAge())
-                .gender(req.getGender())
+                .userProfile(UserProfile.builder()
+                        .fullName(req.getPatientName())
+                        .phone(req.getPatientPhone())
+                        .email(req.getPatientEmail())
+                        .age(req.getAge())
+                        .gender(req.getGender())
+                        .build())
                 .medicalHistory("Created from appointment request")
                 .build());
     }

@@ -8,6 +8,6 @@ import java.util.Optional;
 public interface DoctorRepository extends JpaRepository<Doctor, Long> {
     List<Doctor> findByActiveTrue();
     List<Doctor> findBySpecializationContainingIgnoreCase(String specialization);
-    Optional<Doctor> findByUserId(Long userId);
-    Optional<Doctor> findByUserUsername(String username);
+    Optional<Doctor> findByUserProfileId(Long profileId);
+    Optional<Doctor> findByUserProfileEmailIgnoreCase(String email);
 }

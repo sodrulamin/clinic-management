@@ -36,7 +36,11 @@ public class PatientService {
             int page, int size, String sortBy, String sortDir
     ) {
         String validSortBy = (sortBy != null && !sortBy.isBlank()) ? sortBy : "id";
-        Sort sort = "DESC".equalsIgnoreCase(sortDir) ? Sort.by(validSortBy).descending() : Sort.by(validSortBy).ascending();
+        String sortProperty = validSortBy;
+        if (List.of("fullName", "phone", "email", "age", "gender", "address", "createdAt").contains(validSortBy)) {
+            sortProperty = "userProfile." + validSortBy;
+        }
+        Sort sort = "DESC".equalsIgnoreCase(sortDir) ? Sort.by(sortProperty).descending() : Sort.by(sortProperty).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
 
         Specification<Patient> spec = PatientSpecification.filterPatients(

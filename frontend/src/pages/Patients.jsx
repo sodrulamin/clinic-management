@@ -344,19 +344,17 @@ export const Patients = () => {
               style={{ height: '32px', fontSize: '0.8rem', flex: 1, gap: '4px' }}
             >
               <Search size={14} />
-              <span>Apply</span>
+              <span>Apply Filters</span>
             </button>
 
-            {isFilterActive && (
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                onClick={handleClearFilters}
-                style={{ height: '32px', fontSize: '0.8rem' }}
-              >
-                Clear
-              </button>
-            )}
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={handleClearFilters}
+              style={{ height: '32px', fontSize: '0.8rem' }}
+            >
+              Clear Filters
+            </button>
           </div>
         </form>
 
@@ -364,6 +362,7 @@ export const Patients = () => {
           <table className="custom-table">
             <thead>
               <tr>
+                <th style={{ width: '50px', textAlign: 'center' }}>SL</th>
                 <th onClick={() => handleSort('fullName')} style={{ cursor: 'pointer', userSelect: 'none' }}>
                   Patient Name {renderSortIndicator('fullName')}
                 </th>
@@ -386,13 +385,16 @@ export const Patients = () => {
             <tbody>
               {patients.length === 0 ? (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
+                  <td colSpan="8" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
                     No patient records found matching your filters.
                   </td>
                 </tr>
               ) : (
-                patients.map((p) => (
+                patients.map((p, idx) => (
                   <tr key={p.id}>
+                    <td style={{ textAlign: 'center', fontWeight: 500, color: 'var(--text-muted)' }}>
+                      {page * pageSize + idx + 1}
+                    </td>
                     <td><strong>{p.fullName}</strong></td>
                     <td>{p.age ? `${p.age} yrs` : '-'} / {p.gender || 'N/A'}</td>
                     <td>{p.phone}</td>

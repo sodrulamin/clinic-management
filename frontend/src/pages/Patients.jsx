@@ -4,10 +4,26 @@ import { UserPlus, Search, Edit, Trash2, X, Eye } from 'lucide-react';
 
 export const Patients = () => {
   const [patients, setPatients] = useState([]);
-  const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingPatient, setEditingPatient] = useState(null);
   const [viewingPatient, setViewingPatient] = useState(null);
+
+  // Filter States
+  const [filterName, setFilterName] = useState('');
+  const [filterPhone, setFilterPhone] = useState('');
+  const [minAge, setMinAge] = useState('');
+  const [maxAge, setMaxAge] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [bloodGroup, setBloodGroup] = useState('ALL');
+
+  // Pagination & Sorting States
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [sortBy, setSortBy] = useState('id');
+  const [sortDir, setSortDir] = useState('DESC');
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -20,10 +36,32 @@ export const Patients = () => {
     medicalHistory: '',
   });
 
-  const fetchPatients = async (query = '') => {
+  const fetchPatients = async () => {
     try {
-      const res = await api.get(`/patients${query ? `?search=${query}` : ''}`);
-      setPatients(res.data);
+      const params = new URLSearchParams();
+      params.append('page', page);
+      params.append('size', pageSize);
+      params.append('sortBy', sortBy);
+      params.append('sortDir', sortDir);
+
+      if (filterName.trim()) params.append('name', filterName.trim());
+      if (filterPhone.trim()) params.append('phone', filterPhone.trim());
+      if (minAge !== '') params.append('minAge', minAge);
+      if (maxAge !== '') params.append('maxAge', maxAge);
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+      if (bloodGroup && bloodGroup !== 'ALL') params.append('bloodGroup', bloodGroup);
+
+      const res = await api.get(`/patients?${params.toString()}`);
+      if (res.data && res.data.content) {
+        setPatients(res.data.content);
+        setTotalElements(res.data.totalElements || 0);
+        setTotalPages(res.data.totalPages || 0);
+      } else if (Array.isArray(res.data)) {
+        setPatients(res.data);
+        setTotalElements(res.data.length);
+        setTotalPages(1);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -31,11 +69,32 @@ export const Patients = () => {
 
   useEffect(() => {
     fetchPatients();
-  }, []);
+  }, [page, pageSize, sortBy, sortDir, filterName, filterPhone, minAge, maxAge, startDate, endDate, bloodGroup]);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    fetchPatients(search);
+  const handleSort = (column) => {
+    if (sortBy === column) {
+      setSortDir((prev) => (prev === 'ASC' ? 'DESC' : 'ASC'));
+    } else {
+      setSortBy(column);
+      setSortDir('ASC');
+    }
+    setPage(0);
+  };
+
+  const renderSortIndicator = (column) => {
+    if (sortBy !== column) return <span style={{ opacity: 0.3, marginLeft: '4px' }}>↕</span>;
+    return <span style={{ color: 'var(--primary)', fontWeight: 'bold', marginLeft: '4px' }}>{sortDir === 'ASC' ? '▲' : '▼'}</span>;
+  };
+
+  const handleClearFilters = () => {
+    setFilterName('');
+    setFilterPhone('');
+    setMinAge('');
+    setMaxAge('');
+    setStartDate('');
+    setEndDate('');
+    setBloodGroup('ALL');
+    setPage(0);
   };
 
   const openModal = (patient = null) => {
@@ -97,19 +156,13 @@ export const Patients = () => {
   return (
     <div>
       <div className="card">
-        <div className="card-header" style={{ flexWrap: 'wrap', gap: '12px' }}>
-          <form onSubmit={handleSearch} style={{ display: 'flex', gap: '8px', flex: 1, minWidth: '260px' }}>
-            <input
-              type="text"
-              className="form-input"
-              placeholder="Search patient by name or phone..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <button type="submit" className="btn btn-secondary">
-              <Search size={16} />
-            </button>
-          </form>
+        <div className="card-header" style={{ flexWrap: 'wrap', gap: '12px', justifyContent: 'space-between' }}>
+          <div>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0 }}>Patient Database</h2>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+              Manage clinic patient profiles, history, and records
+            </p>
+          </div>
 
           <button className="btn btn-primary" onClick={() => openModal()}>
             <UserPlus size={16} />
@@ -117,55 +170,279 @@ export const Patients = () => {
           </button>
         </div>
 
+        {/* Advanced Filters Section */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+            gap: '10px',
+            marginBottom: '16px',
+            backgroundColor: 'var(--table-header-bg)',
+            padding: '12px 14px',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid var(--border-color)',
+            alignItems: 'flex-end',
+          }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+              Patient Name:
+            </label>
+            <input
+              type="text"
+              className="form-input"
+              style={{ height: '32px', fontSize: '0.82rem', padding: '4px 10px' }}
+              placeholder="Search by name..."
+              value={filterName}
+              onChange={(e) => { setFilterName(e.target.value); setPage(0); }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+              Mobile Number:
+            </label>
+            <input
+              type="text"
+              className="form-input"
+              style={{ height: '32px', fontSize: '0.82rem', padding: '4px 10px' }}
+              placeholder="Search by phone..."
+              value={filterPhone}
+              onChange={(e) => { setFilterPhone(e.target.value); setPage(0); }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+              Age Range:
+            </label>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <input
+                type="number"
+                min="0"
+                className="form-input"
+                style={{ height: '32px', fontSize: '0.82rem', padding: '4px 6px', width: '50%' }}
+                placeholder="Min"
+                value={minAge}
+                onChange={(e) => { setMinAge(e.target.value); setPage(0); }}
+              />
+              <input
+                type="number"
+                min="0"
+                className="form-input"
+                style={{ height: '32px', fontSize: '0.82rem', padding: '4px 6px', width: '50%' }}
+                placeholder="Max"
+                value={maxAge}
+                onChange={(e) => { setMaxAge(e.target.value); setPage(0); }}
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+              Served Date (From):
+            </label>
+            <input
+              type="date"
+              className="form-input"
+              style={{ height: '32px', fontSize: '0.82rem', padding: '4px 8px' }}
+              value={startDate}
+              onChange={(e) => { setStartDate(e.target.value); setPage(0); }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+              Served Date (To):
+            </label>
+            <input
+              type="date"
+              className="form-input"
+              style={{ height: '32px', fontSize: '0.82rem', padding: '4px 8px' }}
+              value={endDate}
+              onChange={(e) => { setEndDate(e.target.value); setPage(0); }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+              Blood Group:
+            </label>
+            <select
+              className="form-select"
+              style={{ height: '32px', fontSize: '0.82rem', padding: '4px 8px' }}
+              value={bloodGroup}
+              onChange={(e) => { setBloodGroup(e.target.value); setPage(0); }}
+            >
+              <option value="ALL">-- All Groups --</option>
+              <option value="A+">A+</option>
+              <option value="A-">A-</option>
+              <option value="B+">B+</option>
+              <option value="B-">B-</option>
+              <option value="O+">O+</option>
+              <option value="O-">O-</option>
+              <option value="AB+">AB+</option>
+              <option value="AB-">AB-</option>
+            </select>
+          </div>
+
+          {(filterName || filterPhone || minAge || maxAge || startDate || endDate || bloodGroup !== 'ALL') && (
+            <div>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={handleClearFilters}
+                style={{ height: '32px', fontSize: '0.78rem', width: '100%' }}
+              >
+                Clear Filters
+              </button>
+            </div>
+          )}
+        </div>
+
         <div className="table-responsive">
           <table className="custom-table">
             <thead>
               <tr>
-                <th>Patient Name</th>
-                <th>Age / Gender</th>
-                <th>Phone</th>
-                <th>Blood Group</th>
-                <th>Last Served Date</th>
+                <th onClick={() => handleSort('fullName')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                  Patient Name {renderSortIndicator('fullName')}
+                </th>
+                <th onClick={() => handleSort('age')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                  Age / Gender {renderSortIndicator('age')}
+                </th>
+                <th onClick={() => handleSort('phone')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                  Phone {renderSortIndicator('phone')}
+                </th>
+                <th onClick={() => handleSort('bloodGroup')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                  Blood Group {renderSortIndicator('bloodGroup')}
+                </th>
+                <th onClick={() => handleSort('lastServedDate')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                  Last Served Date {renderSortIndicator('lastServedDate')}
+                </th>
                 <th>Medical History</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {patients.map((p) => (
-                <tr key={p.id}>
-                  <td><strong>{p.fullName}</strong></td>
-                  <td>{p.age ? `${p.age} yrs` : '-'} / {p.gender}</td>
-                  <td>{p.phone}</td>
-                  <td>
-                    <span className="badge badge-info">{p.bloodGroup || 'N/A'}</span>
-                  </td>
-                  <td>
-                    {p.lastServedDate ? (
-                      <span className="badge badge-success">{p.lastServedDate}</span>
-                    ) : (
-                      <span style={{ fontSize: '0.84rem', color: 'var(--text-muted)' }}>Never</span>
-                    )}
-                  </td>
-                  <td style={{ maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {p.medicalHistory || 'None'}
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button className="btn btn-secondary btn-sm" title="View Patient Details" onClick={() => setViewingPatient(p)}>
-                        <Eye size={14} />
-                      </button>
-                      <button className="btn btn-secondary btn-sm" title="Edit Patient" onClick={() => openModal(p)}>
-                        <Edit size={14} />
-                      </button>
-                      <button className="btn btn-danger btn-sm" title="Delete Patient" onClick={() => handleDelete(p.id)}>
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
+              {patients.length === 0 ? (
+                <tr>
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
+                    No patient records found matching your filters.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                patients.map((p) => (
+                  <tr key={p.id}>
+                    <td><strong>{p.fullName}</strong></td>
+                    <td>{p.age ? `${p.age} yrs` : '-'} / {p.gender || 'N/A'}</td>
+                    <td>{p.phone}</td>
+                    <td>
+                      <span className="badge badge-info">{p.bloodGroup || 'N/A'}</span>
+                    </td>
+                    <td>
+                      {p.lastServedDate ? (
+                        <span className="badge badge-success">{p.lastServedDate}</span>
+                      ) : (
+                        <span style={{ fontSize: '0.84rem', color: 'var(--text-muted)' }}>Never</span>
+                      )}
+                    </td>
+                    <td style={{ maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {p.medicalHistory || 'None'}
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button className="btn btn-secondary btn-sm" title="View Patient Details" onClick={() => setViewingPatient(p)}>
+                          <Eye size={14} />
+                        </button>
+                        <button className="btn btn-secondary btn-sm" title="Edit Patient" onClick={() => openModal(p)}>
+                          <Edit size={14} />
+                        </button>
+                        <button className="btn btn-danger btn-sm" title="Delete Patient" onClick={() => handleDelete(p.id)}>
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination Controls */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '12px',
+            marginTop: '16px',
+            paddingTop: '12px',
+            borderTop: '1px solid var(--border-color)',
+          }}
+        >
+          <div style={{ fontSize: '0.84rem', color: 'var(--text-muted)' }}>
+            Showing {totalElements > 0 ? page * pageSize + 1 : 0} to {Math.min((page + 1) * pageSize, totalElements)} of {totalElements} patients
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: 'var(--text-muted)' }}>
+              <span>Page Size:</span>
+              <select
+                className="form-select"
+                style={{ height: '30px', fontSize: '0.82rem', padding: '2px 8px' }}
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setPage(0);
+                }}
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+              <button
+                className="btn btn-secondary btn-sm"
+                disabled={page === 0}
+                onClick={() => setPage(0)}
+                title="First Page"
+              >
+                «
+              </button>
+              <button
+                className="btn btn-secondary btn-sm"
+                disabled={page === 0}
+                onClick={() => setPage((prev) => Math.max(0, prev - 1))}
+              >
+                Previous
+              </button>
+
+              <span style={{ fontSize: '0.84rem', fontWeight: 600, padding: '0 8px' }}>
+                Page {totalPages > 0 ? page + 1 : 0} of {totalPages}
+              </span>
+
+              <button
+                className="btn btn-secondary btn-sm"
+                disabled={page >= totalPages - 1}
+                onClick={() => setPage((prev) => Math.min(totalPages - 1, prev + 1))}
+              >
+                Next
+              </button>
+              <button
+                className="btn btn-secondary btn-sm"
+                disabled={page >= totalPages - 1}
+                onClick={() => setPage(totalPages - 1)}
+                title="Last Page"
+              >
+                »
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -215,7 +492,7 @@ export const Patients = () => {
 
             <form onSubmit={handleSubmit}>
               <div className="form-group">
-                <label className="form-label">Full Name</label>
+                <label className="form-label">Full Name *</label>
                 <input
                   type="text"
                   className="form-input"
@@ -268,7 +545,7 @@ export const Patients = () => {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div className="form-group">
-                  <label className="form-label">Phone Number</label>
+                  <label className="form-label">Phone Number *</label>
                   <input
                     type="text"
                     className="form-input"

@@ -4,10 +4,12 @@ import com.clinic.management.entity.Patient;
 import com.clinic.management.service.PatientService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -19,8 +21,28 @@ public class PatientController {
 
     @GetMapping
     @PreAuthorize("@securityService.hasAccess('/patients')")
-    public ResponseEntity<List<Patient>> getAllPatients(@RequestParam(required = false) String search) {
-        return ResponseEntity.ok(patientService.getAllPatients(search));
+    public ResponseEntity<?> getAllPatients(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String phone,
+            @RequestParam(required = false) Integer minAge,
+            @RequestParam(required = false) Integer maxAge,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) String bloodGroup,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
+            @RequestParam(required = false, defaultValue = "id") String sortBy,
+            @RequestParam(required = false, defaultValue = "ASC") String sortDir
+    ) {
+        if (page != null) {
+            int pageSize = (size != null && size > 0) ? size : 10;
+            return ResponseEntity.ok(patientService.getPatientsPaginated(
+                    search, name, phone, minAge, maxAge, startDate, endDate, bloodGroup, page, pageSize, sortBy, sortDir
+            ));
+        } else {
+            return ResponseEntity.ok(patientService.getAllPatients(search));
+        }
     }
 
     @GetMapping("/{id}")

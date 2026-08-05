@@ -52,6 +52,16 @@ public class AppointmentController {
         return ResponseEntity.ok(appointmentService.getStats(authentication, startDate, endDate, allDates, doctorId));
     }
 
+    @GetMapping("/served-comparison-stats")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN') or hasAuthority('ADMIN') or hasAuthority('ROLE_DOCTOR') or hasAuthority('DOCTOR')")
+    public ResponseEntity<?> getServedComparisonStats(Authentication authentication) {
+        try {
+            return ResponseEntity.ok(appointmentService.getServedComparisonStats(authentication));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
     @PostMapping
     @PreAuthorize("@securityService.hasAccess('/appointments')")
     public ResponseEntity<?> createAppointment(@RequestBody CreateAppointmentRequest request) {

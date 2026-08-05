@@ -254,4 +254,81 @@ public class AppointmentService {
     public void deleteAppointment(Long id) {
         appointmentRepository.deleteById(id);
     }
+
+    public Map<String, Object> getServedComparisonStats(Authentication authentication) {
+        if (authentication == null) {
+            throw new RuntimeException("Unauthorized access");
+        }
+
+        User user = userRepository.findByUsername(authentication.getName()).orElse(null);
+        if (user == null || user.getRole() == null) {
+            throw new RuntimeException("Unauthorized access");
+        }
+
+        String roleName = user.getRole().getName();
+        boolean isAdmin = "ROLE_ADMIN".equals(roleName) || "ADMIN".equals(roleName);
+        boolean isDoctor = "ROLE_DOCTOR".equals(roleName) || "DOCTOR".equals(roleName);
+
+        if (!isAdmin && !isDoctor) {
+            throw new RuntimeException("Access denied. Only doctors and admins can view served patient comparison stats.");
+        }
+
+        List<Appointment> allApps;
+        if (isDoctor && !isAdmin) {
+            List<Doctor> allDocs = doctorRepository.findAll();
+            Doctor doctor = allDocs.stream()
+                    .filter(d -> (user.getEmail() != null && user.getEmail().equalsIgnoreCase(d.getEmail())) ||
+                            (user.getFullName() != null && user.getFullName().equalsIgnoreCase(d.getFullName())) ||
+                            (d.getFullName() != null && d.getFullName().toLowerCase().contains(user.getUsername().toLowerCase())))
+                    .findFirst()
+                    .orElse(allDocs.isEmpty() ? null : allDocs.get(0));
+
+            if (doctor != null) {
+                allApps = appointmentRepository.findByDoctorId(doctor.getId());
+            } else {
+                allApps = List.of();
+            }
+        } else {
+            allApps = appointmentRepository.findAll();
+        }
+
+        List<Appointment> servedApps = allApps.stream()
+                .filter(a -> a.getStatus() == Appointment.AppointmentStatus.VISITED ||
+                             a.getStatus() == Appointment.AppointmentStatus.COMPLETED)
+                .toList();
+
+        LocalDate today = LocalDate.now();
+        LocalDate yesterday = today.minusDays(1);
+        LocalDate sameDayLastWeek = today.minusDays(7);
+
+        long todayCount = servedApps.stream()
+                .filter(a -> today.equals(a.getAppointmentDate()))
+                .count();
+
+        long yesterdayCount = servedApps.stream()
+                .filter(a -> yesterday.equals(a.getAppointmentDate()))
+                .count();
+
+        long sameDayLastWeekCount = servedApps.stream()
+                .filter(a -> sameDayLastWeek.equals(a.getAppointmentDate()))
+                .count();
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("todayDate", today.toString());
+        result.put("todayDayName", today.getDayOfWeek().toString());
+        result.put("todayCount", todayCount);
+
+        result.put("yesterdayDate", yesterday.toString());
+        result.put("yesterdayDayName", yesterday.getDayOfWeek().toString());
+        result.put("yesterdayCount", yesterdayCount);
+
+        result.put("sameDayLastWeekDate", sameDayLastWeek.toString());
+        result.put("sameDayLastWeekDayName", sameDayLastWeek.getDayOfWeek().toString());
+        result.put("sameDayLastWeekCount", sameDayLastWeekCount);
+
+        result.put("userRole", roleName);
+        result.put("scope", isDoctor && !isAdmin ? "MY_PATIENTS" : "ALL_PATIENTS");
+
+        return result;
+    }
 }

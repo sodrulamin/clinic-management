@@ -101,7 +101,7 @@ export const Dashboard = () => {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
             gap: '16px',
             marginBottom: '24px',
           }}
@@ -152,8 +152,6 @@ export const Dashboard = () => {
                       display: 'grid',
                       gridTemplateColumns: 'repeat(3, 1fr)',
                       gap: '8px',
-                      alignItems: 'flex-end',
-                      height: '180px',
                       backgroundColor: 'var(--input-bg)',
                       padding: '16px 8px 12px 8px',
                       borderRadius: 'var(--radius-md)',
@@ -163,22 +161,25 @@ export const Dashboard = () => {
                     {bars.map((bar, index) => {
                       const heightPercent = Math.max(12, Math.round((bar.count / maxVal) * 100));
                       return (
-                        <div key={index} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
+                        <div key={index} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
                           <div style={{ fontSize: '0.88rem', fontWeight: 'bold', color: bar.color, marginBottom: '4px', whiteSpace: 'nowrap' }}>
                             {bar.count}
                           </div>
 
-                          <div
-                            style={{
-                              width: '100%',
-                              maxWidth: '44px',
-                              height: `${heightPercent}%`,
-                              background: bar.gradient,
-                              borderRadius: '6px 6px 0 0',
-                              transition: 'height 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
-                              boxShadow: '0 4px 10px rgba(0,0,0,0.12)',
-                            }}
-                          />
+                          <div style={{ height: '100px', width: '100%', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+                            <div
+                              style={{
+                                width: '100%',
+                                maxWidth: '44px',
+                                height: `${heightPercent}%`,
+                                minHeight: '8px',
+                                background: bar.gradient,
+                                borderRadius: '6px 6px 0 0',
+                                transition: 'height 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+                                boxShadow: '0 4px 10px rgba(0,0,0,0.12)',
+                              }}
+                            />
+                          </div>
 
                           <div style={{ marginTop: '8px', textAlign: 'center' }}>
                             <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap' }}>
@@ -258,8 +259,6 @@ export const Dashboard = () => {
                       display: 'grid',
                       gridTemplateColumns: 'repeat(3, 1fr)',
                       gap: '8px',
-                      alignItems: 'flex-end',
-                      height: '180px',
                       backgroundColor: 'var(--input-bg)',
                       padding: '16px 8px 12px 8px',
                       borderRadius: 'var(--radius-md)',
@@ -269,22 +268,25 @@ export const Dashboard = () => {
                     {feeBars.map((bar, index) => {
                       const heightPercent = Math.max(12, Math.round((bar.amount / maxValFee) * 100));
                       return (
-                        <div key={index} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
+                        <div key={index} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
                           <div style={{ fontSize: '0.88rem', fontWeight: 'bold', color: bar.color, marginBottom: '4px', whiteSpace: 'nowrap' }}>
                             ৳{bar.amount.toFixed(0)}
                           </div>
 
-                          <div
-                            style={{
-                              width: '100%',
-                              maxWidth: '44px',
-                              height: `${heightPercent}%`,
-                              background: bar.gradient,
-                              borderRadius: '6px 6px 0 0',
-                              transition: 'height 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
-                              boxShadow: '0 4px 10px rgba(0,0,0,0.12)',
-                            }}
-                          />
+                          <div style={{ height: '100px', width: '100%', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+                            <div
+                              style={{
+                                width: '100%',
+                                maxWidth: '44px',
+                                height: `${heightPercent}%`,
+                                minHeight: '8px',
+                                background: bar.gradient,
+                                borderRadius: '6px 6px 0 0',
+                                transition: 'height 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+                                boxShadow: '0 4px 10px rgba(0,0,0,0.12)',
+                              }}
+                            />
+                          </div>
 
                           <div style={{ marginTop: '8px', textAlign: 'center' }}>
                             <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap' }}>

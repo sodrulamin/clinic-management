@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
-import { UserPlus, Search, Edit, Trash2, X, Eye } from 'lucide-react';
+import { UserPlus, Search, Edit, Trash2, X, Eye, Filter } from 'lucide-react';
 
 export const Patients = () => {
   const [patients, setPatients] = useState([]);
@@ -8,14 +8,25 @@ export const Patients = () => {
   const [editingPatient, setEditingPatient] = useState(null);
   const [viewingPatient, setViewingPatient] = useState(null);
 
-  // Filter States
-  const [filterName, setFilterName] = useState('');
-  const [filterPhone, setFilterPhone] = useState('');
-  const [minAge, setMinAge] = useState('');
-  const [maxAge, setMaxAge] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [bloodGroup, setBloodGroup] = useState('ALL');
+  // Input Filter States (Form inputs)
+  const [inputName, setInputName] = useState('');
+  const [inputPhone, setInputPhone] = useState('');
+  const [inputMinAge, setInputMinAge] = useState('');
+  const [inputMaxAge, setInputMaxAge] = useState('');
+  const [inputStartDate, setInputStartDate] = useState('');
+  const [inputEndDate, setInputEndDate] = useState('');
+  const [inputBloodGroup, setInputBloodGroup] = useState('ALL');
+
+  // Applied Filter States (Passed to API)
+  const [appliedFilters, setAppliedFilters] = useState({
+    name: '',
+    phone: '',
+    minAge: '',
+    maxAge: '',
+    startDate: '',
+    endDate: '',
+    bloodGroup: 'ALL',
+  });
 
   // Pagination & Sorting States
   const [page, setPage] = useState(0);
@@ -44,13 +55,13 @@ export const Patients = () => {
       params.append('sortBy', sortBy);
       params.append('sortDir', sortDir);
 
-      if (filterName.trim()) params.append('name', filterName.trim());
-      if (filterPhone.trim()) params.append('phone', filterPhone.trim());
-      if (minAge !== '') params.append('minAge', minAge);
-      if (maxAge !== '') params.append('maxAge', maxAge);
-      if (startDate) params.append('startDate', startDate);
-      if (endDate) params.append('endDate', endDate);
-      if (bloodGroup && bloodGroup !== 'ALL') params.append('bloodGroup', bloodGroup);
+      if (appliedFilters.name.trim()) params.append('name', appliedFilters.name.trim());
+      if (appliedFilters.phone.trim()) params.append('phone', appliedFilters.phone.trim());
+      if (appliedFilters.minAge !== '') params.append('minAge', appliedFilters.minAge);
+      if (appliedFilters.maxAge !== '') params.append('maxAge', appliedFilters.maxAge);
+      if (appliedFilters.startDate) params.append('startDate', appliedFilters.startDate);
+      if (appliedFilters.endDate) params.append('endDate', appliedFilters.endDate);
+      if (appliedFilters.bloodGroup && appliedFilters.bloodGroup !== 'ALL') params.append('bloodGroup', appliedFilters.bloodGroup);
 
       const res = await api.get(`/patients?${params.toString()}`);
       if (res.data && res.data.content) {
@@ -69,7 +80,41 @@ export const Patients = () => {
 
   useEffect(() => {
     fetchPatients();
-  }, [page, pageSize, sortBy, sortDir, filterName, filterPhone, minAge, maxAge, startDate, endDate, bloodGroup]);
+  }, [page, pageSize, sortBy, sortDir, appliedFilters]);
+
+  const handleFilterSubmit = (e) => {
+    if (e) e.preventDefault();
+    setAppliedFilters({
+      name: inputName,
+      phone: inputPhone,
+      minAge: inputMinAge,
+      maxAge: inputMaxAge,
+      startDate: inputStartDate,
+      endDate: inputEndDate,
+      bloodGroup: inputBloodGroup,
+    });
+    setPage(0);
+  };
+
+  const handleClearFilters = () => {
+    setInputName('');
+    setInputPhone('');
+    setInputMinAge('');
+    setInputMaxAge('');
+    setInputStartDate('');
+    setInputEndDate('');
+    setInputBloodGroup('ALL');
+    setAppliedFilters({
+      name: '',
+      phone: '',
+      minAge: '',
+      maxAge: '',
+      startDate: '',
+      endDate: '',
+      bloodGroup: 'ALL',
+    });
+    setPage(0);
+  };
 
   const handleSort = (column) => {
     if (sortBy === column) {
@@ -84,17 +129,6 @@ export const Patients = () => {
   const renderSortIndicator = (column) => {
     if (sortBy !== column) return <span style={{ opacity: 0.3, marginLeft: '4px' }}>↕</span>;
     return <span style={{ color: 'var(--primary)', fontWeight: 'bold', marginLeft: '4px' }}>{sortDir === 'ASC' ? '▲' : '▼'}</span>;
-  };
-
-  const handleClearFilters = () => {
-    setFilterName('');
-    setFilterPhone('');
-    setMinAge('');
-    setMaxAge('');
-    setStartDate('');
-    setEndDate('');
-    setBloodGroup('ALL');
-    setPage(0);
   };
 
   const openModal = (patient = null) => {
@@ -153,6 +187,22 @@ export const Patients = () => {
     }
   };
 
+  const isFilterActive =
+    inputName ||
+    inputPhone ||
+    inputMinAge ||
+    inputMaxAge ||
+    inputStartDate ||
+    inputEndDate ||
+    inputBloodGroup !== 'ALL' ||
+    appliedFilters.name ||
+    appliedFilters.phone ||
+    appliedFilters.minAge ||
+    appliedFilters.maxAge ||
+    appliedFilters.startDate ||
+    appliedFilters.endDate ||
+    appliedFilters.bloodGroup !== 'ALL';
+
   return (
     <div>
       <div className="card">
@@ -170,11 +220,12 @@ export const Patients = () => {
           </button>
         </div>
 
-        {/* Advanced Filters Section */}
-        <div
+        {/* Advanced Filters Form Section */}
+        <form
+          onSubmit={handleFilterSubmit}
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
             gap: '10px',
             marginBottom: '16px',
             backgroundColor: 'var(--table-header-bg)',
@@ -192,9 +243,9 @@ export const Patients = () => {
               type="text"
               className="form-input"
               style={{ height: '32px', fontSize: '0.82rem', padding: '4px 10px' }}
-              placeholder="Search by name..."
-              value={filterName}
-              onChange={(e) => { setFilterName(e.target.value); setPage(0); }}
+              placeholder="Filter by name..."
+              value={inputName}
+              onChange={(e) => setInputName(e.target.value)}
             />
           </div>
 
@@ -206,9 +257,9 @@ export const Patients = () => {
               type="text"
               className="form-input"
               style={{ height: '32px', fontSize: '0.82rem', padding: '4px 10px' }}
-              placeholder="Search by phone..."
-              value={filterPhone}
-              onChange={(e) => { setFilterPhone(e.target.value); setPage(0); }}
+              placeholder="Filter by phone..."
+              value={inputPhone}
+              onChange={(e) => setInputPhone(e.target.value)}
             />
           </div>
 
@@ -223,8 +274,8 @@ export const Patients = () => {
                 className="form-input"
                 style={{ height: '32px', fontSize: '0.82rem', padding: '4px 6px', width: '50%' }}
                 placeholder="Min"
-                value={minAge}
-                onChange={(e) => { setMinAge(e.target.value); setPage(0); }}
+                value={inputMinAge}
+                onChange={(e) => setInputMinAge(e.target.value)}
               />
               <input
                 type="number"
@@ -232,8 +283,8 @@ export const Patients = () => {
                 className="form-input"
                 style={{ height: '32px', fontSize: '0.82rem', padding: '4px 6px', width: '50%' }}
                 placeholder="Max"
-                value={maxAge}
-                onChange={(e) => { setMaxAge(e.target.value); setPage(0); }}
+                value={inputMaxAge}
+                onChange={(e) => setInputMaxAge(e.target.value)}
               />
             </div>
           </div>
@@ -246,8 +297,8 @@ export const Patients = () => {
               type="date"
               className="form-input"
               style={{ height: '32px', fontSize: '0.82rem', padding: '4px 8px' }}
-              value={startDate}
-              onChange={(e) => { setStartDate(e.target.value); setPage(0); }}
+              value={inputStartDate}
+              onChange={(e) => setInputStartDate(e.target.value)}
             />
           </div>
 
@@ -259,8 +310,8 @@ export const Patients = () => {
               type="date"
               className="form-input"
               style={{ height: '32px', fontSize: '0.82rem', padding: '4px 8px' }}
-              value={endDate}
-              onChange={(e) => { setEndDate(e.target.value); setPage(0); }}
+              value={inputEndDate}
+              onChange={(e) => setInputEndDate(e.target.value)}
             />
           </div>
 
@@ -271,8 +322,8 @@ export const Patients = () => {
             <select
               className="form-select"
               style={{ height: '32px', fontSize: '0.82rem', padding: '4px 8px' }}
-              value={bloodGroup}
-              onChange={(e) => { setBloodGroup(e.target.value); setPage(0); }}
+              value={inputBloodGroup}
+              onChange={(e) => setInputBloodGroup(e.target.value)}
             >
               <option value="ALL">-- All Groups --</option>
               <option value="A+">A+</option>
@@ -286,19 +337,28 @@ export const Patients = () => {
             </select>
           </div>
 
-          {(filterName || filterPhone || minAge || maxAge || startDate || endDate || bloodGroup !== 'ALL') && (
-            <div>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <button
+              type="submit"
+              className="btn btn-primary btn-sm"
+              style={{ height: '32px', fontSize: '0.8rem', flex: 1, gap: '4px' }}
+            >
+              <Search size={14} />
+              <span>Apply</span>
+            </button>
+
+            {isFilterActive && (
               <button
                 type="button"
                 className="btn btn-secondary btn-sm"
                 onClick={handleClearFilters}
-                style={{ height: '32px', fontSize: '0.78rem', width: '100%' }}
+                style={{ height: '32px', fontSize: '0.8rem' }}
               >
-                Clear Filters
+                Clear
               </button>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        </form>
 
         <div className="table-responsive">
           <table className="custom-table">

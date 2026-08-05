@@ -148,12 +148,13 @@ export const Dashboard = () => {
               return (
                 <div style={{ marginTop: '8px' }}>
                   <div
+                    className="preserve-grid"
                     style={{
                       display: 'grid',
                       gridTemplateColumns: 'repeat(3, 1fr)',
-                      gap: '8px',
+                      gap: '4px',
                       backgroundColor: 'var(--input-bg)',
-                      padding: '16px 8px 12px 8px',
+                      padding: '16px 4px 12px 4px',
                       borderRadius: 'var(--radius-md)',
                       border: '1px solid var(--border-color)',
                     }}
@@ -162,7 +163,7 @@ export const Dashboard = () => {
                       const heightPercent = Math.max(12, Math.round((bar.count / maxVal) * 100));
                       return (
                         <div key={index} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-                          <div style={{ fontSize: '0.88rem', fontWeight: 'bold', color: bar.color, marginBottom: '4px', whiteSpace: 'nowrap' }}>
+                          <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: bar.color, marginBottom: '4px', whiteSpace: 'nowrap' }}>
                             {bar.count}
                           </div>
 
@@ -170,7 +171,7 @@ export const Dashboard = () => {
                             <div
                               style={{
                                 width: '100%',
-                                maxWidth: '44px',
+                                maxWidth: '40px',
                                 height: `${heightPercent}%`,
                                 minHeight: '8px',
                                 background: bar.gradient,
@@ -182,10 +183,10 @@ export const Dashboard = () => {
                           </div>
 
                           <div style={{ marginTop: '8px', textAlign: 'center' }}>
-                            <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap' }}>
+                            <div style={{ fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap' }}>
                               {bar.label}
                             </div>
-                            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                            <div style={{ fontSize: '0.64rem', color: 'var(--text-muted)' }}>
                               {bar.subLabel}
                             </div>
                           </div>
@@ -194,16 +195,16 @@ export const Dashboard = () => {
                     })}
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginTop: '10px' }}>
-                    <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'var(--input-bg)', border: '1px solid var(--border-color)' }}>
-                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Vs Yesterday</div>
-                      <div style={{ fontSize: '0.88rem', fontWeight: 700, color: tod >= yest ? '#10b981' : '#ef4444' }}>
+                  <div className="preserve-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginTop: '10px' }}>
+                    <div style={{ padding: '8px 6px', borderRadius: '8px', background: 'var(--input-bg)', border: '1px solid var(--border-color)' }}>
+                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Vs Yesterday</div>
+                      <div style={{ fontSize: '0.84rem', fontWeight: 700, color: tod >= yest ? '#10b981' : '#ef4444' }}>
                         {tod >= yest ? `+${tod - yest}` : `${tod - yest}`}
                       </div>
                     </div>
-                    <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'var(--input-bg)', border: '1px solid var(--border-color)' }}>
-                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Vs Same Day Last Wk</div>
-                      <div style={{ fontSize: '0.88rem', fontWeight: 700, color: tod >= lastWk ? '#10b981' : '#ef4444' }}>
+                    <div style={{ padding: '8px 6px', borderRadius: '8px', background: 'var(--input-bg)', border: '1px solid var(--border-color)' }}>
+                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Vs Same Day Last Wk</div>
+                      <div style={{ fontSize: '0.84rem', fontWeight: 700, color: tod >= lastWk ? '#10b981' : '#ef4444' }}>
                         {tod >= lastWk ? `+${tod - lastWk}` : `${tod - lastWk}`}
                       </div>
                     </div>
@@ -255,12 +256,13 @@ export const Dashboard = () => {
               return (
                 <div style={{ marginTop: '8px' }}>
                   <div
+                    className="preserve-grid"
                     style={{
                       display: 'grid',
                       gridTemplateColumns: 'repeat(3, 1fr)',
-                      gap: '8px',
+                      gap: '4px',
                       backgroundColor: 'var(--input-bg)',
-                      padding: '16px 8px 12px 8px',
+                      padding: '16px 4px 12px 4px',
                       borderRadius: 'var(--radius-md)',
                       border: '1px solid var(--border-color)',
                     }}
@@ -269,7 +271,7 @@ export const Dashboard = () => {
                       const heightPercent = Math.max(12, Math.round((bar.amount / maxValFee) * 100));
                       return (
                         <div key={index} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-                          <div style={{ fontSize: '0.88rem', fontWeight: 'bold', color: bar.color, marginBottom: '4px', whiteSpace: 'nowrap' }}>
+                          <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: bar.color, marginBottom: '4px', whiteSpace: 'nowrap' }}>
                             ৳{bar.amount.toFixed(0)}
                           </div>
 
@@ -277,7 +279,7 @@ export const Dashboard = () => {
                             <div
                               style={{
                                 width: '100%',
-                                maxWidth: '44px',
+                                maxWidth: '40px',
                                 height: `${heightPercent}%`,
                                 minHeight: '8px',
                                 background: bar.gradient,
@@ -289,10 +291,10 @@ export const Dashboard = () => {
                           </div>
 
                           <div style={{ marginTop: '8px', textAlign: 'center' }}>
-                            <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap' }}>
+                            <div style={{ fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap' }}>
                               {bar.label}
                             </div>
-                            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                            <div style={{ fontSize: '0.64rem', color: 'var(--text-muted)' }}>
                               {bar.subLabel}
                             </div>
                           </div>
@@ -301,16 +303,16 @@ export const Dashboard = () => {
                     })}
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginTop: '10px' }}>
-                    <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'var(--input-bg)', border: '1px solid var(--border-color)' }}>
-                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Vs Yesterday</div>
-                      <div style={{ fontSize: '0.88rem', fontWeight: 700, color: todFee >= yestFee ? '#10b981' : '#ef4444' }}>
+                  <div className="preserve-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginTop: '10px' }}>
+                    <div style={{ padding: '8px 6px', borderRadius: '8px', background: 'var(--input-bg)', border: '1px solid var(--border-color)' }}>
+                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Vs Yesterday</div>
+                      <div style={{ fontSize: '0.84rem', fontWeight: 700, color: todFee >= yestFee ? '#10b981' : '#ef4444' }}>
                         {todFee >= yestFee ? `+৳${(todFee - yestFee).toFixed(0)}` : `-৳${Math.abs(todFee - yestFee).toFixed(0)}`}
                       </div>
                     </div>
-                    <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'var(--input-bg)', border: '1px solid var(--border-color)' }}>
-                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Vs Same Day Last Wk</div>
-                      <div style={{ fontSize: '0.88rem', fontWeight: 700, color: todFee >= lastWkFee ? '#10b981' : '#ef4444' }}>
+                    <div style={{ padding: '8px 6px', borderRadius: '8px', background: 'var(--input-bg)', border: '1px solid var(--border-color)' }}>
+                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Vs Same Day Last Wk</div>
+                      <div style={{ fontSize: '0.84rem', fontWeight: 700, color: todFee >= lastWkFee ? '#10b981' : '#ef4444' }}>
                         {todFee >= lastWkFee ? `+৳${(todFee - lastWkFee).toFixed(0)}` : `-৳${Math.abs(todFee - lastWkFee).toFixed(0)}`}
                       </div>
                     </div>

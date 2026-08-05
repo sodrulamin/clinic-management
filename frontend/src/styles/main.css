@@ -980,9 +980,9 @@ body,
     border-radius: 14px;
   }
 
-  /* Force multi-column inline grids on pages to collapse on small devices */
-  div[style*="gridTemplateColumns"],
-  div[style*="grid-template-columns"] {
+  /* Force multi-column inline grids on pages to collapse on small devices (unless explicitly preserved) */
+  div[style*="gridTemplateColumns"]:not(.preserve-grid),
+  div[style*="grid-template-columns"]:not(.preserve-grid) {
     grid-template-columns: 1fr !important;
   }
 }

@@ -103,6 +103,9 @@ public class AppointmentController {
     public static class CreateAppointmentRequest {
         private Long doctorId;
         private Long patientId;
+        private String patientName;
+        private String patientPhone;
+        private String patientEmail;
         private LocalDate appointmentDate;
         private String timeSlot;
         private String reason;

@@ -80,8 +80,11 @@ export const Appointments = () => {
 
   // Booking form
   const [formData, setFormData] = useState({
-    doctorId: '',
+    patientName: '',
+    patientPhone: '',
+    patientEmail: '',
     patientId: '',
+    doctorId: '',
     appointmentDate: new Date().toISOString().split('T')[0],
     reason: '',
     age: '',
@@ -209,14 +212,27 @@ export const Appointments = () => {
 
   // ─── Booking ────────────────────────────────────────────────────────────────
 
-  const handlePatientChange = (patientId) => {
+  const matchingPatients = formData.patientPhone.trim().length >= 3
+    ? patients.filter((p) => p.phone && p.phone.trim().includes(formData.patientPhone.trim()))
+    : [];
+
+  const handleSelectExistingPatient = (patientId) => {
+    if (!patientId) {
+      setFormData((prev) => ({ ...prev, patientId: '' }));
+      return;
+    }
     const p = patients.find((pat) => String(pat.id) === String(patientId));
-    setFormData((prev) => ({
-      ...prev,
-      patientId,
-      age: p?.age !== undefined && p?.age !== null ? String(p.age) : '',
-      gender: p?.gender || '',
-    }));
+    if (p) {
+      setFormData((prev) => ({
+        ...prev,
+        patientId: p.id,
+        patientName: p.fullName || prev.patientName,
+        patientPhone: p.phone || prev.patientPhone,
+        patientEmail: p.email || prev.patientEmail,
+        age: p.age !== undefined && p.age !== null ? String(p.age) : prev.age,
+        gender: p.gender || prev.gender,
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -224,6 +240,7 @@ export const Appointments = () => {
     try {
       const payload = {
         ...formData,
+        patientId: formData.patientId ? parseInt(formData.patientId) : null,
         age: formData.age !== '' ? parseInt(formData.age) : null,
         gender: formData.gender || null,
       };
@@ -654,16 +671,72 @@ export const Appointments = () => {
             </div>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
-                <label className="form-label">Select Patient *</label>
-                <select className="form-select" value={formData.patientId} onChange={(e) => handlePatientChange(e.target.value)} required>
-                  <option value="">-- Choose Patient --</option>
-                  {patients.map((p) => (<option key={p.id} value={p.id}>{p.fullName} ({p.phone})</option>))}
-                </select>
+                <label className="form-label">Patient Name *</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Full name of patient"
+                  value={formData.patientName}
+                  onChange={(e) => setFormData({ ...formData, patientName: e.target.value, patientId: '' })}
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="form-group">
+                  <label className="form-label">Patient Phone *</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g. 01700000000"
+                    value={formData.patientPhone}
+                    onChange={(e) => setFormData({ ...formData, patientPhone: e.target.value, patientId: '' })}
+                    required
+                  />
+                  {matchingPatients.length > 0 && (
+                    <div style={{ marginTop: '8px' }}>
+                      <label style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+                        💡 Found {matchingPatients.length} Existing Patient(s) — Select to Auto-Fill:
+                      </label>
+                      <select
+                        className="form-select"
+                        style={{
+                          fontSize: '0.86rem',
+                          borderColor: 'var(--primary)',
+                          backgroundColor: 'var(--bg-card)',
+                          color: 'var(--text-main)',
+                          padding: '8px 12px'
+                        }}
+                        onChange={(e) => handleSelectExistingPatient(e.target.value)}
+                      >
+                        <option value="" style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}>
+                          -- Choose Patient Profile --
+                        </option>
+                        {matchingPatients.map((p) => (
+                          <option key={p.id} value={p.id} style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}>
+                            {p.fullName} ({p.gender || 'N/A'}, {p.age ? `${p.age} yrs` : 'Age N/A'}) {p.email ? `- ${p.email}` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Patient Email</label>
+                  <input
+                    type="email"
+                    className="form-input"
+                    placeholder="e.g. patient@example.com"
+                    value={formData.patientEmail}
+                    onChange={(e) => setFormData({ ...formData, patientEmail: e.target.value })}
+                  />
+                </div>
               </div>
 
               {/* Patient Age & Gender */}
-              <div style={{ display: 'flex', gap: '16px', marginBottom: '18px' }}>
-                <div style={{ flex: '1' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="form-group">
                   <label className="form-label">Patient Age (Years)</label>
                   <input
                     type="number"
@@ -675,7 +748,8 @@ export const Appointments = () => {
                     onChange={(e) => setFormData({ ...formData, age: e.target.value })}
                   />
                 </div>
-                <div style={{ flex: '1' }}>
+
+                <div className="form-group">
                   <label className="form-label">Patient Gender</label>
                   <select
                     className="form-select"
@@ -689,15 +763,17 @@ export const Appointments = () => {
                   </select>
                 </div>
               </div>
+
               <div className="form-group">
-                <label className="form-label">Select Doctor</label>
+                <label className="form-label">Select Doctor *</label>
                 <select className="form-select" value={formData.doctorId} onChange={(e) => setFormData({ ...formData, doctorId: e.target.value })} required>
                   <option value="">-- Choose Doctor --</option>
                   {doctors.map((d) => (<option key={d.id} value={d.id}>{d.fullName} - {d.specialization} (৳{d.consultationFee})</option>))}
                 </select>
               </div>
+
               <div className="form-group">
-                <label className="form-label">Appointment Date</label>
+                <label className="form-label">Appointment Date *</label>
                 <input
                   type="date"
                   className="form-input"

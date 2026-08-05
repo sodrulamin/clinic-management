@@ -149,21 +149,44 @@ public class AppointmentService {
         Doctor doctor = doctorRepository.findById(request.getDoctorId())
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
 
-        Patient patient = patientRepository.findById(request.getPatientId())
-                .orElseThrow(() -> new RuntimeException("Patient not found"));
+        Patient patient;
+        if (request.getPatientId() != null) {
+            patient = patientRepository.findById(request.getPatientId())
+                    .orElseThrow(() -> new RuntimeException("Patient not found"));
 
-        // Update patient age and gender if supplied
-        boolean patientUpdated = false;
-        if (request.getAge() != null) {
-            patient.setAge(request.getAge());
-            patientUpdated = true;
-        }
-        if (request.getGender() != null && !request.getGender().isBlank()) {
-            patient.setGender(request.getGender());
-            patientUpdated = true;
-        }
-        if (patientUpdated) {
-            patientRepository.save(patient);
+            boolean patientUpdated = false;
+            if (request.getAge() != null) {
+                patient.setAge(request.getAge());
+                patientUpdated = true;
+            }
+            if (request.getGender() != null && !request.getGender().isBlank()) {
+                patient.setGender(request.getGender());
+                patientUpdated = true;
+            }
+            if (request.getPatientName() != null && !request.getPatientName().isBlank()) {
+                patient.setFullName(request.getPatientName());
+                patientUpdated = true;
+            }
+            if (request.getPatientPhone() != null && !request.getPatientPhone().isBlank()) {
+                patient.setPhone(request.getPatientPhone());
+                patientUpdated = true;
+            }
+            if (request.getPatientEmail() != null && !request.getPatientEmail().isBlank()) {
+                patient.setEmail(request.getPatientEmail());
+                patientUpdated = true;
+            }
+            if (patientUpdated) {
+                patientRepository.save(patient);
+            }
+        } else {
+            patient = Patient.builder()
+                    .fullName(request.getPatientName() != null && !request.getPatientName().isBlank() ? request.getPatientName() : "New Patient")
+                    .phone(request.getPatientPhone())
+                    .email(request.getPatientEmail())
+                    .age(request.getAge())
+                    .gender(request.getGender())
+                    .build();
+            patient = patientRepository.save(patient);
         }
 
         String timeSlot = request.getTimeSlot();

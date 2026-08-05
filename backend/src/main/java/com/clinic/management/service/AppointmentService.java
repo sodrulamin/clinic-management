@@ -17,6 +17,7 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +29,23 @@ public class AppointmentService {
     private final UserRepository userRepository;
     private final AppointmentSlotService appointmentSlotService;
 
+    private Doctor findDoctorForUser(User user) {
+        if (user == null) return null;
+        Optional<Doctor> docOpt = doctorRepository.findByUserId(user.getId());
+        if (docOpt.isPresent()) {
+            return docOpt.get();
+        }
+        List<Doctor> allDocs = doctorRepository.findAll();
+        return allDocs.stream()
+                .filter(d -> (d.getUser() != null && d.getUser().getId().equals(user.getId())) ||
+                        (user.getEmail() != null && user.getEmail().equalsIgnoreCase(d.getEmail())) ||
+                        (user.getPhone() != null && user.getPhone().equals(d.getPhone())) ||
+                        (user.getFullName() != null && user.getFullName().equalsIgnoreCase(d.getFullName())) ||
+                        (d.getFullName() != null && d.getFullName().toLowerCase().contains(user.getUsername().toLowerCase())))
+                .findFirst()
+                .orElse(allDocs.isEmpty() ? null : allDocs.get(0));
+    }
+
     public List<Appointment> getAllAppointments(Authentication authentication, LocalDate startDate, LocalDate endDate, Boolean allDates, Long targetDoctorId) {
         List<Appointment> list;
         if (authentication != null) {
@@ -37,13 +55,7 @@ public class AppointmentService {
             if (!isAdminOrRec) {
                 User user = userRepository.findByUsername(authentication.getName()).orElse(null);
                 if (user != null && user.getRole() != null && "ROLE_DOCTOR".equals(user.getRole().getName())) {
-                    List<Doctor> allDocs = doctorRepository.findAll();
-                    Doctor matchedDoc = allDocs.stream()
-                            .filter(d -> (user.getEmail() != null && user.getEmail().equalsIgnoreCase(d.getEmail())) ||
-                                    (user.getFullName() != null && user.getFullName().equalsIgnoreCase(d.getFullName())) ||
-                                    (d.getFullName() != null && d.getFullName().toLowerCase().contains(user.getUsername().toLowerCase())))
-                            .findFirst()
-                            .orElse(allDocs.isEmpty() ? null : allDocs.getFirst());
+                    Doctor matchedDoc = findDoctorForUser(user);
 
                     if (matchedDoc != null) {
                         list = appointmentRepository.findByDoctorId(matchedDoc.getId());
@@ -90,13 +102,7 @@ public class AppointmentService {
             User user = userRepository.findByUsername(authentication.getName()).orElse(null);
             if (user != null && user.getRole() != null && "ROLE_DOCTOR".equals(user.getRole().getName())) {
                 isDoctor = true;
-                List<Doctor> allDocs = doctorRepository.findAll();
-                doctor = allDocs.stream()
-                        .filter(d -> (user.getEmail() != null && user.getEmail().equalsIgnoreCase(d.getEmail())) ||
-                                (user.getFullName() != null && user.getFullName().equalsIgnoreCase(d.getFullName())) ||
-                                (d.getFullName() != null && d.getFullName().toLowerCase().contains(user.getUsername().toLowerCase())))
-                        .findFirst()
-                        .orElse(allDocs.isEmpty() ? null : allDocs.get(0));
+                doctor = findDoctorForUser(user);
             }
         }
 
@@ -275,13 +281,7 @@ public class AppointmentService {
 
         List<Appointment> allApps;
         if (isDoctor && !isAdmin) {
-            List<Doctor> allDocs = doctorRepository.findAll();
-            Doctor doctor = allDocs.stream()
-                    .filter(d -> (user.getEmail() != null && user.getEmail().equalsIgnoreCase(d.getEmail())) ||
-                            (user.getFullName() != null && user.getFullName().equalsIgnoreCase(d.getFullName())) ||
-                            (d.getFullName() != null && d.getFullName().toLowerCase().contains(user.getUsername().toLowerCase())))
-                    .findFirst()
-                    .orElse(allDocs.isEmpty() ? null : allDocs.get(0));
+            Doctor doctor = findDoctorForUser(user);
 
             if (doctor != null) {
                 allApps = appointmentRepository.findByDoctorId(doctor.getId());

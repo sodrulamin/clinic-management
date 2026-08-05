@@ -56,4 +56,8 @@ public class Doctor {
 
     @Builder.Default
     private boolean active = true;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "user_id")
+    private User user;
 }

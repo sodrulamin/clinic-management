@@ -30,7 +30,24 @@ public class DoctorService {
         return doctorRepository.findById(id);
     }
 
+    private void resolveUserLink(Doctor doctor) {
+        if (doctor.getUser() != null && doctor.getUser().getId() != null) {
+            userRepository.findById(doctor.getUser().getId()).ifPresent(doctor::setUser);
+        } else if (doctor.getUser() == null) {
+            if (doctor.getEmail() != null && !doctor.getEmail().isBlank()) {
+                userRepository.findByEmail(doctor.getEmail()).ifPresent(doctor::setUser);
+            }
+            if (doctor.getUser() == null && doctor.getPhone() != null && !doctor.getPhone().isBlank()) {
+                userRepository.findAll().stream()
+                        .filter(u -> doctor.getPhone().equals(u.getPhone()))
+                        .findFirst()
+                        .ifPresent(doctor::setUser);
+            }
+        }
+    }
+
     public Doctor createDoctor(Doctor doctor) {
+        resolveUserLink(doctor);
         return doctorRepository.save(doctor);
     }
 
@@ -50,7 +67,8 @@ public class DoctorService {
                 if ("ROLE_DOCTOR".equals(currentUser.getRole().getName())) {
                     boolean matchesEmail = currentUser.getEmail() != null && currentUser.getEmail().equalsIgnoreCase(doctor.getEmail());
                     boolean matchesName = currentUser.getFullName() != null && currentUser.getFullName().equalsIgnoreCase(doctor.getFullName());
-                    if (!matchesEmail && !matchesName) {
+                    boolean matchesUser = doctor.getUser() != null && currentUser.getId().equals(doctor.getUser().getId());
+                    if (!matchesEmail && !matchesName && !matchesUser) {
                         throw new AccessDeniedException("Doctors are only permitted to update their own profile.");
                     }
                 }
@@ -71,10 +89,17 @@ public class DoctorService {
             if (updatedDoctor.getMaxDiscountFixed() != null) {
                 doctor.setMaxDiscountFixed(updatedDoctor.getMaxDiscountFixed());
             }
+            if (updatedDoctor.getUser() != null && updatedDoctor.getUser().getId() != null) {
+                userRepository.findById(updatedDoctor.getUser().getId()).ifPresent(doctor::setUser);
+            }
         }
         doctor.setWorkingHours(updatedDoctor.getWorkingHours());
         doctor.setProfileImage(updatedDoctor.getProfileImage());
         doctor.setActive(updatedDoctor.isActive());
+
+        if (doctor.getUser() == null) {
+            resolveUserLink(doctor);
+        }
 
         return doctorRepository.save(doctor);
     }

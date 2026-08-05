@@ -19,14 +19,14 @@ public class AppointmentScheduler {
     private final AppointmentRepository appointmentRepository;
 
     /**
-     * Executes every minute.
+     * Executes every night at 1:00 AM.
      * ShedLock ensures this task only executes once across clustered nodes.
      */
-    @Scheduled(cron = "0 * * * * ?")
+    @Scheduled(cron = "0 0 1 * * ?")
     @SchedulerLock(
         name = "AutoCancelUnservedAppointments", 
-        lockAtLeastFor = "10s", 
-        lockAtMostFor = "50s"
+        lockAtLeastFor = "1m", 
+        lockAtMostFor = "10m"
     )
     public void autoCancelUnservedAppointments() {
         log.info("ShedLock Scheduler: Executing auto-cancellation check for past unserved appointments...");

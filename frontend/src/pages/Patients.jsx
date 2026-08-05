@@ -315,17 +315,17 @@ export const Patients = () => {
             />
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxWidth: '120px' }}>
             <label style={{ fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-muted)' }}>
               Blood Group:
             </label>
             <select
               className="form-select"
-              style={{ height: '32px', fontSize: '0.82rem', padding: '4px 8px' }}
+              style={{ height: '32px', fontSize: '0.82rem', padding: '4px 6px', maxWidth: '120px' }}
               value={inputBloodGroup}
               onChange={(e) => setInputBloodGroup(e.target.value)}
             >
-              <option value="ALL">-- All Groups --</option>
+              <option value="ALL">-- All --</option>
               <option value="A+">A+</option>
               <option value="A-">A-</option>
               <option value="B+">B+</option>
@@ -344,7 +344,7 @@ export const Patients = () => {
               style={{ height: '32px', fontSize: '0.8rem', flex: 1, gap: '4px' }}
             >
               <Search size={14} />
-              <span>Apply Filters</span>
+              <span>Apply</span>
             </button>
 
             <button
@@ -353,7 +353,7 @@ export const Patients = () => {
               onClick={handleClearFilters}
               style={{ height: '32px', fontSize: '0.8rem' }}
             >
-              Clear Filters
+              <span>Clear</span>
             </button>
           </div>
         </form>

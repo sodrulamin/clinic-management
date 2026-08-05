@@ -223,6 +223,11 @@ public class AppointmentService {
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Appointment not found"));
         appointment.setStatus(status);
+        if (status == Appointment.AppointmentStatus.VISITED && appointment.getPatient() != null) {
+            Patient patient = appointment.getPatient();
+            patient.setLastServedDate(appointment.getAppointmentDate() != null ? appointment.getAppointmentDate() : LocalDate.now());
+            patientRepository.save(patient);
+        }
         return appointmentRepository.save(appointment);
     }
 

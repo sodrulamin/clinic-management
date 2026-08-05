@@ -11,6 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.*;
 
 @Service
@@ -19,6 +20,7 @@ public class PrescriptionService {
 
     private final PrescriptionRepository prescriptionRepository;
     private final AppointmentRepository appointmentRepository;
+    private final PatientRepository patientRepository;
     private final UserRepository userRepository;
     private final DiagnosisRepository diagnosisRepository;
     private final PrescriptionDiagnosisRepository prescriptionDiagnosisRepository;
@@ -149,6 +151,11 @@ public class PrescriptionService {
 
         // Update appointment status to VISITED
         appointment.setStatus(Appointment.AppointmentStatus.VISITED);
+        if (appointment.getPatient() != null) {
+            Patient patient = appointment.getPatient();
+            patient.setLastServedDate(appointment.getAppointmentDate() != null ? appointment.getAppointmentDate() : LocalDate.now());
+            patientRepository.save(patient);
+        }
         appointmentRepository.save(appointment);
 
         // --- Upsert prescription ---

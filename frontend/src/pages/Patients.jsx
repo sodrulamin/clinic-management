@@ -125,6 +125,7 @@ export const Patients = () => {
                 <th>Age / Gender</th>
                 <th>Phone</th>
                 <th>Blood Group</th>
+                <th>Last Served Date</th>
                 <th>Medical History</th>
                 <th>Actions</th>
               </tr>
@@ -138,18 +139,25 @@ export const Patients = () => {
                   <td>
                     <span className="badge badge-info">{p.bloodGroup || 'N/A'}</span>
                   </td>
+                  <td>
+                    {p.lastServedDate ? (
+                      <span className="badge badge-success">{p.lastServedDate}</span>
+                    ) : (
+                      <span style={{ fontSize: '0.84rem', color: 'var(--text-muted)' }}>Never</span>
+                    )}
+                  </td>
                   <td style={{ maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {p.medicalHistory || 'None'}
                   </td>
                   <td>
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <button className="btn btn-secondary btn-sm" onClick={() => setViewingPatient(p)}>
+                      <button className="btn btn-secondary btn-sm" title="View Patient Details" onClick={() => setViewingPatient(p)}>
                         <Eye size={14} />
                       </button>
-                      <button className="btn btn-secondary btn-sm" onClick={() => openModal(p)}>
+                      <button className="btn btn-secondary btn-sm" title="Edit Patient" onClick={() => openModal(p)}>
                         <Edit size={14} />
                       </button>
-                      <button className="btn btn-danger btn-sm" onClick={() => handleDelete(p.id)}>
+                      <button className="btn btn-danger btn-sm" title="Delete Patient" onClick={() => handleDelete(p.id)}>
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -175,9 +183,11 @@ export const Patients = () => {
               <p><strong>Full Name:</strong> {viewingPatient.fullName}</p>
               <p><strong>Phone:</strong> {viewingPatient.phone}</p>
               <p><strong>Email:</strong> {viewingPatient.email || 'N/A'}</p>
-              <p><strong>Age & Gender:</strong> {viewingPatient.age} yrs, {viewingPatient.gender}</p>
-              <p><strong>Blood Group:</strong> {viewingPatient.bloodGroup}</p>
+              <p><strong>Age & Gender:</strong> {viewingPatient.age ? `${viewingPatient.age} yrs` : 'N/A'}, {viewingPatient.gender}</p>
+              <p><strong>Blood Group:</strong> {viewingPatient.bloodGroup || 'N/A'}</p>
               <p><strong>Address:</strong> {viewingPatient.address || 'N/A'}</p>
+              <p><strong>Last Served Date:</strong> {viewingPatient.lastServedDate ? <span className="badge badge-success">{viewingPatient.lastServedDate}</span> : 'Never served'}</p>
+              <p><strong>Created Date:</strong> {viewingPatient.createdAt ? new Date(viewingPatient.createdAt).toLocaleString() : 'N/A'}</p>
               <div style={{ marginTop: '12px', padding: '12px', background: 'var(--input-bg)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                 <strong>Medical History & Notes:</strong>
                 <p>{viewingPatient.medicalHistory || 'No history recorded.'}</p>

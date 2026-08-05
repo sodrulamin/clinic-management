@@ -41,6 +41,8 @@ public class Patient {
     @Column(columnDefinition = "TEXT")
     private String medicalHistory;
 
+    private LocalDate lastServedDate;
+
     private LocalDateTime createdAt;
 
     @PrePersist

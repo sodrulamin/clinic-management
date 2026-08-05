@@ -313,18 +313,42 @@ public class AppointmentService {
                 .filter(a -> sameDayLastWeek.equals(a.getAppointmentDate()))
                 .count();
 
+        java.util.function.ToDoubleFunction<Appointment> feeCalc = a -> {
+            double baseFee = (a.getDoctor() != null && a.getDoctor().getConsultationFee() != null) ? a.getDoctor().getConsultationFee() : 0.0;
+            double disc = (a.getDiscount() != null) ? a.getDiscount() : 0.0;
+            return Math.max(0.0, baseFee - disc);
+        };
+
+        double todayIncome = servedApps.stream()
+                .filter(a -> today.equals(a.getAppointmentDate()))
+                .mapToDouble(feeCalc)
+                .sum();
+
+        double yesterdayIncome = servedApps.stream()
+                .filter(a -> yesterday.equals(a.getAppointmentDate()))
+                .mapToDouble(feeCalc)
+                .sum();
+
+        double sameDayLastWeekIncome = servedApps.stream()
+                .filter(a -> sameDayLastWeek.equals(a.getAppointmentDate()))
+                .mapToDouble(feeCalc)
+                .sum();
+
         Map<String, Object> result = new HashMap<>();
         result.put("todayDate", today.toString());
         result.put("todayDayName", today.getDayOfWeek().toString());
         result.put("todayCount", todayCount);
+        result.put("todayIncome", todayIncome);
 
         result.put("yesterdayDate", yesterday.toString());
         result.put("yesterdayDayName", yesterday.getDayOfWeek().toString());
         result.put("yesterdayCount", yesterdayCount);
+        result.put("yesterdayIncome", yesterdayIncome);
 
         result.put("sameDayLastWeekDate", sameDayLastWeek.toString());
         result.put("sameDayLastWeekDayName", sameDayLastWeek.getDayOfWeek().toString());
         result.put("sameDayLastWeekCount", sameDayLastWeekCount);
+        result.put("sameDayLastWeekIncome", sameDayLastWeekIncome);
 
         result.put("userRole", roleName);
         result.put("scope", isDoctor && !isAdmin ? "MY_PATIENTS" : "ALL_PATIENTS");

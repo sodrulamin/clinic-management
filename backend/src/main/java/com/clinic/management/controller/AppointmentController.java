@@ -85,10 +85,9 @@ public class AppointmentController {
     @PostMapping("/trigger-auto-cancel")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<?> triggerAutoCancel() {
-        int cancelled = appointmentScheduler.autoCancelUnservedAppointments();
+        appointmentScheduler.autoCancelUnservedAppointments();
         return ResponseEntity.ok(Map.of(
-                "message", "ShedLock auto-cancel scheduler executed successfully",
-                "cancelledCount", cancelled
+                "message", "ShedLock auto-cancel scheduler executed successfully"
         ));
     }
 

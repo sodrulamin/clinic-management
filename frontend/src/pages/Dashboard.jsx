@@ -96,44 +96,23 @@ export const Dashboard = () => {
         </div>
       </div>
 
-      {/* Comparison Graphs Grid (Side-by-side on PC view for Admin & Doctor) */}
+      {/* Comparison Graphs Grid (Side-by-side on PC view, responsive on Mobile) */}
       {canViewServedGraph && comparisonStats && (
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))',
-            gap: '20px',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '16px',
             marginBottom: '24px',
           }}
         >
-          {/* Card 1: Patient Served Comparison */}
+          {/* Card 1: Patient Served */}
           <div className="card" style={{ margin: 0 }}>
-            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-              <div>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <TrendingUp size={20} color="var(--primary)" />
-                  <span>Patient Served Comparison</span>
-                </h3>
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-                  Today vs Yesterday vs Same Day Last Wk
-                </p>
-              </div>
-              <div>
-                <span
-                  className="badge"
-                  style={{
-                    backgroundColor: 'rgba(59, 130, 246, 0.12)',
-                    color: 'var(--primary)',
-                    fontWeight: 600,
-                    fontSize: '0.76rem',
-                    padding: '4px 10px',
-                    borderRadius: '20px',
-                    border: '1px solid rgba(59, 130, 246, 0.25)'
-                  }}
-                >
-                  {isAdmin ? '🏥 Clinic-Wide' : '👨‍⚕️ My Patients'}
-                </span>
-              </div>
+            <div className="card-header" style={{ paddingBottom: '10px' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <TrendingUp size={20} color="var(--primary)" />
+                <span>Patient Served</span>
+              </h3>
             </div>
 
             {(() => {
@@ -144,7 +123,7 @@ export const Dashboard = () => {
 
               const bars = [
                 {
-                  label: 'Same Day Last Wk',
+                  label: 'Last Wk',
                   subLabel: comparisonStats.sameDayLastWeekDate || '',
                   count: lastWk,
                   gradient: 'linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%)',
@@ -167,16 +146,16 @@ export const Dashboard = () => {
               ];
 
               return (
-                <div style={{ marginTop: '12px' }}>
+                <div style={{ marginTop: '8px' }}>
                   <div
                     style={{
                       display: 'grid',
                       gridTemplateColumns: 'repeat(3, 1fr)',
-                      gap: '16px',
+                      gap: '8px',
                       alignItems: 'flex-end',
-                      height: '190px',
+                      height: '180px',
                       backgroundColor: 'var(--input-bg)',
-                      padding: '20px 14px 12px 14px',
+                      padding: '16px 8px 12px 8px',
                       borderRadius: 'var(--radius-md)',
                       border: '1px solid var(--border-color)',
                     }}
@@ -185,14 +164,14 @@ export const Dashboard = () => {
                       const heightPercent = Math.max(12, Math.round((bar.count / maxVal) * 100));
                       return (
                         <div key={index} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
-                          <div style={{ fontSize: '1rem', fontWeight: 'bold', color: bar.color, marginBottom: '6px' }}>
-                            {bar.count} Patients
+                          <div style={{ fontSize: '0.88rem', fontWeight: 'bold', color: bar.color, marginBottom: '4px', whiteSpace: 'nowrap' }}>
+                            {bar.count}
                           </div>
 
                           <div
                             style={{
                               width: '100%',
-                              maxWidth: '56px',
+                              maxWidth: '44px',
                               height: `${heightPercent}%`,
                               background: bar.gradient,
                               borderRadius: '6px 6px 0 0',
@@ -201,11 +180,11 @@ export const Dashboard = () => {
                             }}
                           />
 
-                          <div style={{ marginTop: '10px', textAlign: 'center' }}>
-                            <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                          <div style={{ marginTop: '8px', textAlign: 'center' }}>
+                            <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap' }}>
                               {bar.label}
                             </div>
-                            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
                               {bar.subLabel}
                             </div>
                           </div>
@@ -214,17 +193,17 @@ export const Dashboard = () => {
                     })}
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '12px' }}>
-                    <div style={{ padding: '10px', borderRadius: '8px', background: 'var(--input-bg)', border: '1px solid var(--border-color)' }}>
-                      <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Vs Yesterday</div>
-                      <div style={{ fontSize: '0.95rem', fontWeight: 700, color: tod >= yest ? '#10b981' : '#ef4444' }}>
-                        {tod >= yest ? `+${tod - yest}` : `${tod - yest}`} Patients
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginTop: '10px' }}>
+                    <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'var(--input-bg)', border: '1px solid var(--border-color)' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Vs Yesterday</div>
+                      <div style={{ fontSize: '0.88rem', fontWeight: 700, color: tod >= yest ? '#10b981' : '#ef4444' }}>
+                        {tod >= yest ? `+${tod - yest}` : `${tod - yest}`}
                       </div>
                     </div>
-                    <div style={{ padding: '10px', borderRadius: '8px', background: 'var(--input-bg)', border: '1px solid var(--border-color)' }}>
-                      <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Vs Same Day Last Wk</div>
-                      <div style={{ fontSize: '0.95rem', fontWeight: 700, color: tod >= lastWk ? '#10b981' : '#ef4444' }}>
-                        {tod >= lastWk ? `+${tod - lastWk}` : `${tod - lastWk}`} Patients
+                    <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'var(--input-bg)', border: '1px solid var(--border-color)' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Vs Same Day Last Wk</div>
+                      <div style={{ fontSize: '0.88rem', fontWeight: 700, color: tod >= lastWk ? '#10b981' : '#ef4444' }}>
+                        {tod >= lastWk ? `+${tod - lastWk}` : `${tod - lastWk}`}
                       </div>
                     </div>
                   </div>
@@ -233,34 +212,13 @@ export const Dashboard = () => {
             })()}
           </div>
 
-          {/* Card 2: Fees Collection Comparison */}
+          {/* Card 2: Earnings */}
           <div className="card" style={{ margin: 0 }}>
-            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-              <div>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <DollarSign size={20} color="#f59e0b" />
-                  <span>Fees Collection Comparison</span>
-                </h3>
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-                  Today vs Yesterday vs Same Day Last Wk
-                </p>
-              </div>
-              <div>
-                <span
-                  className="badge"
-                  style={{
-                    backgroundColor: 'rgba(245, 158, 11, 0.12)',
-                    color: '#f59e0b',
-                    fontWeight: 600,
-                    fontSize: '0.76rem',
-                    padding: '4px 10px',
-                    borderRadius: '20px',
-                    border: '1px solid rgba(245, 158, 11, 0.25)'
-                  }}
-                >
-                  {isAdmin ? '🏥 Clinic-Wide' : '👨‍⚕️ My Earnings'}
-                </span>
-              </div>
+            <div className="card-header" style={{ paddingBottom: '10px' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <DollarSign size={20} color="#f59e0b" />
+                <span>Earnings</span>
+              </h3>
             </div>
 
             {(() => {
@@ -271,7 +229,7 @@ export const Dashboard = () => {
 
               const feeBars = [
                 {
-                  label: 'Same Day Last Wk',
+                  label: 'Last Wk',
                   subLabel: comparisonStats.sameDayLastWeekDate || '',
                   amount: lastWkFee,
                   gradient: 'linear-gradient(180deg, #f59e0b 0%, #b45309 100%)',
@@ -294,16 +252,16 @@ export const Dashboard = () => {
               ];
 
               return (
-                <div style={{ marginTop: '12px' }}>
+                <div style={{ marginTop: '8px' }}>
                   <div
                     style={{
                       display: 'grid',
                       gridTemplateColumns: 'repeat(3, 1fr)',
-                      gap: '16px',
+                      gap: '8px',
                       alignItems: 'flex-end',
-                      height: '190px',
+                      height: '180px',
                       backgroundColor: 'var(--input-bg)',
-                      padding: '20px 14px 12px 14px',
+                      padding: '16px 8px 12px 8px',
                       borderRadius: 'var(--radius-md)',
                       border: '1px solid var(--border-color)',
                     }}
@@ -312,14 +270,14 @@ export const Dashboard = () => {
                       const heightPercent = Math.max(12, Math.round((bar.amount / maxValFee) * 100));
                       return (
                         <div key={index} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
-                          <div style={{ fontSize: '1rem', fontWeight: 'bold', color: bar.color, marginBottom: '6px' }}>
+                          <div style={{ fontSize: '0.88rem', fontWeight: 'bold', color: bar.color, marginBottom: '4px', whiteSpace: 'nowrap' }}>
                             ৳{bar.amount.toFixed(0)}
                           </div>
 
                           <div
                             style={{
                               width: '100%',
-                              maxWidth: '56px',
+                              maxWidth: '44px',
                               height: `${heightPercent}%`,
                               background: bar.gradient,
                               borderRadius: '6px 6px 0 0',
@@ -328,11 +286,11 @@ export const Dashboard = () => {
                             }}
                           />
 
-                          <div style={{ marginTop: '10px', textAlign: 'center' }}>
-                            <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                          <div style={{ marginTop: '8px', textAlign: 'center' }}>
+                            <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap' }}>
                               {bar.label}
                             </div>
-                            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
                               {bar.subLabel}
                             </div>
                           </div>
@@ -341,16 +299,16 @@ export const Dashboard = () => {
                     })}
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '12px' }}>
-                    <div style={{ padding: '10px', borderRadius: '8px', background: 'var(--input-bg)', border: '1px solid var(--border-color)' }}>
-                      <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Vs Yesterday</div>
-                      <div style={{ fontSize: '0.95rem', fontWeight: 700, color: todFee >= yestFee ? '#10b981' : '#ef4444' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginTop: '10px' }}>
+                    <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'var(--input-bg)', border: '1px solid var(--border-color)' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Vs Yesterday</div>
+                      <div style={{ fontSize: '0.88rem', fontWeight: 700, color: todFee >= yestFee ? '#10b981' : '#ef4444' }}>
                         {todFee >= yestFee ? `+৳${(todFee - yestFee).toFixed(0)}` : `-৳${Math.abs(todFee - yestFee).toFixed(0)}`}
                       </div>
                     </div>
-                    <div style={{ padding: '10px', borderRadius: '8px', background: 'var(--input-bg)', border: '1px solid var(--border-color)' }}>
-                      <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Vs Same Day Last Wk</div>
-                      <div style={{ fontSize: '0.95rem', fontWeight: 700, color: todFee >= lastWkFee ? '#10b981' : '#ef4444' }}>
+                    <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'var(--input-bg)', border: '1px solid var(--border-color)' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Vs Same Day Last Wk</div>
+                      <div style={{ fontSize: '0.88rem', fontWeight: 700, color: todFee >= lastWkFee ? '#10b981' : '#ef4444' }}>
                         {todFee >= lastWkFee ? `+৳${(todFee - lastWkFee).toFixed(0)}` : `-৳${Math.abs(todFee - lastWkFee).toFixed(0)}`}
                       </div>
                     </div>

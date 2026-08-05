@@ -121,9 +121,13 @@ export const Dashboard = () => {
               const tod = comparisonStats.todayCount || 0;
               const maxVal = Math.max(lastWk, yest, tod, 1);
 
+              const lastDayName = comparisonStats.sameDayLastWeekDayName
+                ? comparisonStats.sameDayLastWeekDayName.charAt(0).toUpperCase() + comparisonStats.sameDayLastWeekDayName.slice(1).toLowerCase()
+                : 'Wk';
+
               const bars = [
                 {
-                  label: 'Last Wk',
+                  label: `Last ${lastDayName}`,
                   subLabel: comparisonStats.sameDayLastWeekDate || '',
                   count: lastWk,
                   gradient: 'linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%)',
@@ -183,7 +187,7 @@ export const Dashboard = () => {
                           </div>
 
                           <div style={{ marginTop: '8px', textAlign: 'center' }}>
-                            <div style={{ fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap' }}>
+                            <div style={{ fontSize: '0.74rem', fontWeight: 600, color: 'var(--text-main)', lineHeight: 1.2 }}>
                               {bar.label}
                             </div>
                             <div style={{ fontSize: '0.64rem', color: 'var(--text-muted)' }}>
@@ -203,7 +207,7 @@ export const Dashboard = () => {
                       </div>
                     </div>
                     <div style={{ padding: '8px 6px', borderRadius: '8px', background: 'var(--input-bg)', border: '1px solid var(--border-color)' }}>
-                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Vs Same Day Last Wk</div>
+                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Vs Last {lastDayName}</div>
                       <div style={{ fontSize: '0.84rem', fontWeight: 700, color: tod >= lastWk ? '#10b981' : '#ef4444' }}>
                         {tod >= lastWk ? `+${tod - lastWk}` : `${tod - lastWk}`}
                       </div>
@@ -229,9 +233,13 @@ export const Dashboard = () => {
               const todFee = comparisonStats.todayIncome || 0;
               const maxValFee = Math.max(lastWkFee, yestFee, todFee, 1);
 
+              const lastDayName = comparisonStats.sameDayLastWeekDayName
+                ? comparisonStats.sameDayLastWeekDayName.charAt(0).toUpperCase() + comparisonStats.sameDayLastWeekDayName.slice(1).toLowerCase()
+                : 'Wk';
+
               const feeBars = [
                 {
-                  label: 'Last Wk',
+                  label: `Last ${lastDayName}`,
                   subLabel: comparisonStats.sameDayLastWeekDate || '',
                   amount: lastWkFee,
                   gradient: 'linear-gradient(180deg, #f59e0b 0%, #b45309 100%)',
@@ -311,7 +319,7 @@ export const Dashboard = () => {
                       </div>
                     </div>
                     <div style={{ padding: '8px 6px', borderRadius: '8px', background: 'var(--input-bg)', border: '1px solid var(--border-color)' }}>
-                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Vs Same Day Last Wk</div>
+                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Vs Last {lastDayName}</div>
                       <div style={{ fontSize: '0.84rem', fontWeight: 700, color: todFee >= lastWkFee ? '#10b981' : '#ef4444' }}>
                         {todFee >= lastWkFee ? `+৳${(todFee - lastWkFee).toFixed(0)}` : `-৳${Math.abs(todFee - lastWkFee).toFixed(0)}`}
                       </div>

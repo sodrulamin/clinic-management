@@ -836,9 +836,12 @@ export const Doctors = () => {
                         </div>
 
                         {/* Shifts */}
-                        {group.shifts.map((shift, shiftIdx) => (
-                          <div key={shiftIdx} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                            <span style={{ fontSize: '0.75rem', fontWeight: 600, minWidth: '55px', color: 'var(--primary)' }}>Shift {shiftIdx + 1}:</span>
+                        {group.shifts.map((shift, shiftIdx) => {
+                          const hour = parseInt((shift.start || '09:00').split(':')[0], 10);
+                          const periodName = hour < 12 ? 'Morning Shift' : hour < 17 ? 'Afternoon Shift' : 'Evening Shift';
+                          return (
+                            <div key={shiftIdx} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                              <span style={{ fontSize: '0.75rem', fontWeight: 600, minWidth: '95px', color: 'var(--primary)' }}>{periodName}:</span>
                             <input
                               type="time"
                               className="form-input"
@@ -879,7 +882,8 @@ export const Doctors = () => {
                               </button>
                             )}
                           </div>
-                        ))}
+                        );
+                        })}
 
                         <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
                           <button

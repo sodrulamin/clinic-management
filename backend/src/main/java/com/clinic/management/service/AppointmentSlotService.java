@@ -83,7 +83,17 @@ public class AppointmentSlotService {
 
     private DoctorShiftDto createShiftDto(int index, LocalTime start, LocalTime end) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm a");
-        String label = "Shift " + index + ": " + start.format(formatter) + " - " + end.format(formatter);
+        String periodName;
+        int hour = start.getHour();
+        if (hour < 12) {
+            periodName = "Morning Shift";
+        } else if (hour < 17) {
+            periodName = "Afternoon Shift";
+        } else {
+            periodName = "Evening Shift";
+        }
+
+        String label = periodName + " (" + start.format(formatter) + " - " + end.format(formatter) + ")";
         return DoctorShiftDto.builder()
                 .shiftIndex(index)
                 .startTime(start.toString())
@@ -159,11 +169,16 @@ public class AppointmentSlotService {
 
         DoctorShiftDto selectedShift = shifts.get(0);
         if (targetShift != null && !targetShift.isBlank()) {
+            String lowerTarget = targetShift.toLowerCase();
             for (DoctorShiftDto shift : shifts) {
+                String lowerLabel = shift.getDisplayLabel().toLowerCase();
                 if (shift.getDisplayLabel().equalsIgnoreCase(targetShift) ||
                     String.valueOf(shift.getShiftIndex()).equals(targetShift) ||
                     shift.getStartTime().equalsIgnoreCase(targetShift) ||
-                    targetShift.toLowerCase().contains("shift " + shift.getShiftIndex())) {
+                    (lowerTarget.contains("morning") && lowerLabel.contains("morning")) ||
+                    (lowerTarget.contains("afternoon") && lowerLabel.contains("afternoon")) ||
+                    (lowerTarget.contains("evening") && lowerLabel.contains("evening")) ||
+                    lowerTarget.contains("shift " + shift.getShiftIndex())) {
                     selectedShift = shift;
                     break;
                 }

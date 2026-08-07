@@ -78,6 +78,9 @@ export const Doctors = () => {
     return false;
   };
 
+  const [usernameError, setUsernameError] = useState(null);
+  const [usernameSuggestions, setUsernameSuggestions] = useState([]);
+
   const [formData, setFormData] = useState({
     fullName: '',
     specialization: '',
@@ -92,6 +95,8 @@ export const Doctors = () => {
     appointmentDurationMinutes: 20,
     profileImage: '',
     active: true,
+    username: '',
+    password: '',
   });
 
   const fetchDoctors = async () => {
@@ -108,6 +113,8 @@ export const Doctors = () => {
   }, []);
 
   const openModal = (doctor = null) => {
+    setUsernameError(null);
+    setUsernameSuggestions([]);
     if (doctor) {
       setEditingDoctor(doctor);
       setFormData({
@@ -124,6 +131,8 @@ export const Doctors = () => {
         appointmentDurationMinutes: doctor.appointmentDurationMinutes || 20,
         profileImage: doctor.profileImage || '',
         active: doctor.active,
+        username: '',
+        password: '',
       });
     } else {
       setEditingDoctor(null);
@@ -141,6 +150,8 @@ export const Doctors = () => {
         appointmentDurationMinutes: 20,
         profileImage: '',
         active: true,
+        username: '',
+        password: '',
       });
     }
     setShowModal(true);
@@ -163,6 +174,20 @@ export const Doctors = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setUsernameError(null);
+    setUsernameSuggestions([]);
+
+    if (!editingDoctor) {
+      if (!formData.username || !formData.username.trim()) {
+        setUsernameError('Username is required for doctor creation.');
+        return;
+      }
+      if (!formData.password || formData.password.trim().length < 6) {
+        setUsernameError('Password must be at least 6 characters long.');
+        return;
+      }
+    }
+
     try {
       const payload = {
         ...formData,
@@ -177,7 +202,13 @@ export const Doctors = () => {
       setShowModal(false);
       fetchDoctors();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to save doctor details');
+      const resData = err.response?.data;
+      if (resData?.suggestions) {
+        setUsernameError(resData.message || 'Username is already taken');
+        setUsernameSuggestions(resData.suggestions || []);
+      } else {
+        alert(resData?.message || 'Failed to save doctor details');
+      }
     }
   };
 
@@ -443,8 +474,78 @@ export const Doctors = () => {
                 </div>
               </div>
 
+              {/* Doctor User Login Credentials (New Doctor Only) */}
+              {!editingDoctor && (
+                <div style={{ backgroundColor: 'var(--table-header-bg)', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '14px' }}>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--primary)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    🔑 Doctor User Account Credentials
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label">Username *</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="e.g. dr_jenkins"
+                        value={formData.username}
+                        onChange={(e) => {
+                          setFormData({ ...formData, username: e.target.value });
+                          setUsernameError(null);
+                        }}
+                        required
+                      />
+                    </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label">Password *</label>
+                      <input
+                        type="password"
+                        className="form-input"
+                        placeholder="Min 6 characters"
+                        value={formData.password}
+                        onChange={(e) => {
+                          setFormData({ ...formData, password: e.target.value });
+                          setUsernameError(null);
+                        }}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {usernameError && (
+                    <div style={{ marginTop: '12px', padding: '10px 12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--danger)', borderRadius: '8px' }}>
+                      <div style={{ color: 'var(--danger)', fontSize: '0.84rem', fontWeight: 600, marginBottom: usernameSuggestions.length > 0 ? '8px' : 0 }}>
+                        ⚠️ {usernameError}
+                      </div>
+                      {usernameSuggestions.length > 0 && (
+                        <div>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--text-main)', marginBottom: '6px', fontWeight: 600 }}>
+                            Available Username Suggestions (click to select):
+                          </div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                            {usernameSuggestions.map((sug, idx) => (
+                              <button
+                                key={idx}
+                                type="button"
+                                className="btn btn-secondary"
+                                style={{ padding: '4px 10px', fontSize: '0.78rem', borderRadius: '6px', fontWeight: 600, borderColor: 'var(--primary)', color: 'var(--primary)' }}
+                                onClick={() => {
+                                  setFormData({ ...formData, username: sug });
+                                  setUsernameError(null);
+                                }}
+                              >
+                                {sug}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="form-group">
-                <label className="form-label">Doctor Full Name</label>
+                <label className="form-label">Doctor Full Name *</label>
                 <input
                   type="text"
                   className="form-input"

@@ -1,16 +1,21 @@
 package com.clinic.management.controller;
 
+import com.clinic.management.dto.CreateDoctorRequest;
 import com.clinic.management.entity.Doctor;
+import com.clinic.management.exception.UsernameUnavailableException;
 import com.clinic.management.service.DoctorService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/doctors")
@@ -35,8 +40,22 @@ public class DoctorController {
 
     @PostMapping
     @PreAuthorize("hasAuthority('ROLE_ADMIN') or hasAuthority('ADMIN')")
-    public ResponseEntity<Doctor> createDoctor(@Valid @RequestBody Doctor doctor) {
-        return ResponseEntity.ok(doctorService.createDoctor(doctor));
+    public ResponseEntity<?> createDoctor(@Valid @RequestBody CreateDoctorRequest request) {
+        try {
+            Doctor created = doctorService.createDoctor(request);
+            return ResponseEntity.ok(created);
+        } catch (UsernameUnavailableException e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "USERNAME_TAKEN");
+            error.put("message", e.getMessage());
+            error.put("username", e.getUsername());
+            error.put("suggestions", e.getSuggestions());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+        } catch (IllegalArgumentException e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        }
     }
 
     @PutMapping("/{id}")

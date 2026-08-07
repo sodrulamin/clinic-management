@@ -591,9 +591,45 @@ export const Doctors = () => {
                 <div className="form-group">
                   <label className="form-label">Qualification *</label>
 
-                  {/* Selected qualification badge tags */}
+                  {/* Input with suggestive datalist */}
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <input
+                      type="text"
+                      list="modal-qualification-list"
+                      className="form-input"
+                      placeholder="Select or type custom qualification..."
+                      value={customQualInput}
+                      onChange={(e) => setCustomQualInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ',') {
+                          e.preventDefault();
+                          addQualification(customQualInput);
+                        }
+                      }}
+                      required={selectedQuals.length === 0}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      style={{ padding: '0 12px', whiteSpace: 'nowrap' }}
+                      onClick={() => addQualification(customQualInput)}
+                      disabled={!customQualInput.trim()}
+                    >
+                      Add
+                    </button>
+                  </div>
+
+                  <datalist id="modal-qualification-list">
+                    {allQualifications
+                      .filter((q) => !selectedQuals.includes(q))
+                      .map((qual, idx) => (
+                        <option key={idx} value={qual} />
+                      ))}
+                  </datalist>
+
+                  {/* Selected qualification badge tags (Placed Below Input) */}
                   {selectedQuals.length > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
                       {selectedQuals.map((qual, idx) => (
                         <span
                           key={idx}
@@ -631,42 +667,6 @@ export const Doctors = () => {
                       ))}
                     </div>
                   )}
-
-                  {/* Input with suggestive datalist */}
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    <input
-                      type="text"
-                      list="modal-qualification-list"
-                      className="form-input"
-                      placeholder="Select or type custom qualification..."
-                      value={customQualInput}
-                      onChange={(e) => setCustomQualInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ',') {
-                          e.preventDefault();
-                          addQualification(customQualInput);
-                        }
-                      }}
-                      required={selectedQuals.length === 0}
-                    />
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      style={{ padding: '0 12px', whiteSpace: 'nowrap' }}
-                      onClick={() => addQualification(customQualInput)}
-                      disabled={!customQualInput.trim()}
-                    >
-                      Add
-                    </button>
-                  </div>
-
-                  <datalist id="modal-qualification-list">
-                    {allQualifications
-                      .filter((q) => !selectedQuals.includes(q))
-                      .map((qual, idx) => (
-                        <option key={idx} value={qual} />
-                      ))}
-                  </datalist>
                 </div>
               </div>
 

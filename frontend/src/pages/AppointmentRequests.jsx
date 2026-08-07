@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { ClipboardList, Check, X, Plus, Calendar, Stethoscope } from 'lucide-react';
+import { DoctorDatePicker } from '../components/DoctorDatePicker';
 
 export const AppointmentRequests = () => {
   const today = new Date().toISOString().split('T')[0];
@@ -413,12 +414,11 @@ export const AppointmentRequests = () => {
 
               <div className="form-group">
                 <label className="form-label">Preferred Date *</label>
-                <input
-                  type="date"
-                  min={todayStr}
-                  className="form-input"
+                <DoctorDatePicker
                   value={formData.preferredDate}
-                  onChange={(e) => setFormData({ ...formData, preferredDate: e.target.value })}
+                  onChange={(newDate) => setFormData({ ...formData, preferredDate: newDate })}
+                  doctor={selectedDoctorObj}
+                  placeholder="Click to select valid consultation date"
                   required
                 />
                 {selectedDoctorObj && (

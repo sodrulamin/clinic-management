@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
+import { DoctorDatePicker } from '../components/DoctorDatePicker';
 import {
   Calendar,
   Plus,
@@ -805,12 +806,11 @@ export const Appointments = () => {
 
               <div className="form-group">
                 <label className="form-label">Appointment Date *</label>
-                <input
-                  type="date"
-                  min={todayStr}
-                  className="form-input"
+                <DoctorDatePicker
                   value={formData.appointmentDate}
-                  onChange={(e) => setFormData({ ...formData, appointmentDate: e.target.value })}
+                  onChange={(newDate) => setFormData({ ...formData, appointmentDate: newDate })}
+                  doctor={selectedDoctorObj}
+                  placeholder="Click to select valid consultation date"
                   required
                 />
                 {selectedDoctorObj && (

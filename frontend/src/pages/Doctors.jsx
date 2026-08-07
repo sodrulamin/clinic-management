@@ -667,41 +667,6 @@ export const Doctors = () => {
                         <option key={idx} value={qual} />
                       ))}
                   </datalist>
-
-                  {/* Quick suggestion pills */}
-                  <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
-                    <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', alignSelf: 'center', marginRight: '2px' }}>Suggestions:</span>
-                    {allQualifications
-                      .slice(0, 10)
-                      .map((qual, idx) => {
-                        const isSelected = selectedQuals.includes(qual);
-                        return (
-                          <button
-                            key={idx}
-                            type="button"
-                            style={{
-                              padding: '2px 8px',
-                              fontSize: '0.74rem',
-                              borderRadius: '6px',
-                              border: isSelected ? '1px solid var(--primary)' : '1px solid var(--border-color)',
-                              backgroundColor: isSelected ? 'var(--primary)' : 'var(--table-header-bg)',
-                              color: isSelected ? '#ffffff' : 'var(--text-main)',
-                              cursor: 'pointer',
-                              fontWeight: isSelected ? 600 : 400
-                            }}
-                            onClick={() => {
-                              if (isSelected) {
-                                removeQualification(qual);
-                              } else {
-                                addQualification(qual);
-                              }
-                            }}
-                          >
-                            {isSelected ? `✓ ${qual}` : `+ ${qual}`}
-                          </button>
-                        );
-                      })}
-                  </div>
                 </div>
               </div>
 

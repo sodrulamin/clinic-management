@@ -201,7 +201,38 @@ public class DoctorService {
         return doctorRepository.save(doctor);
     }
 
+    @Transactional
     public void deleteDoctor(Long id) {
-        doctorRepository.deleteById(id);
+        Doctor doctor = doctorRepository.findById(id).orElse(null);
+        if (doctor == null) {
+            return;
+        }
+
+        UserProfile userProfile = doctor.getUserProfile();
+
+        // 1. Delete corresponding User login account(s) automatically
+        if (userProfile != null && userProfile.getId() != null) {
+            List<User> users = userRepository.findAllByUserProfileId(userProfile.getId());
+            if (!users.isEmpty()) {
+                userRepository.deleteAll(users);
+            }
+        } else {
+            List<User> usersToDelete = userRepository.findAll().stream()
+                    .filter(u -> (doctor.getEmail() != null && !doctor.getEmail().isBlank() && doctor.getEmail().equalsIgnoreCase(u.getEmail())) ||
+                            (doctor.getPhone() != null && !doctor.getPhone().isBlank() && doctor.getPhone().equals(u.getPhone())) ||
+                            (doctor.getFullName() != null && !doctor.getFullName().isBlank() && doctor.getFullName().equalsIgnoreCase(u.getFullName())))
+                    .toList();
+            if (!usersToDelete.isEmpty()) {
+                userRepository.deleteAll(usersToDelete);
+            }
+        }
+
+        // 2. Delete Doctor record
+        doctorRepository.delete(doctor);
+
+        // 3. Delete associated UserProfile
+        if (userProfile != null && userProfile.getId() != null) {
+            userProfileRepository.delete(userProfile);
+        }
     }
 }

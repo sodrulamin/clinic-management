@@ -13,6 +13,26 @@ const DAYS = [
   { short: 'Sun', full: 'Sunday' },
 ];
 
+const STANDARD_SPECIALIZATIONS = [
+  'Cardiology',
+  'Dermatology',
+  'Endocrinology',
+  'ENT / Otolaryngology',
+  'Gastroenterology',
+  'General Medicine',
+  'General Surgery',
+  'Gynecology & Obstetrics',
+  'Nephrology',
+  'Neurology',
+  'Oncology',
+  'Ophthalmology',
+  'Orthopedics',
+  'Pediatrics',
+  'Psychiatry',
+  'Pulmonology',
+  'Urology',
+];
+
 const matchesDay = (workingHoursStr, selectedDayShort) => {
   if (!selectedDayShort) return true;
   if (!workingHoursStr) return false;
@@ -224,7 +244,10 @@ export const Doctors = () => {
   };
 
   const allSpecialities = Array.from(
-    new Set(doctors.map((d) => d.specialization).filter(Boolean))
+    new Set([
+      ...STANDARD_SPECIALIZATIONS,
+      ...doctors.map((d) => d.specialization).filter(Boolean),
+    ])
   ).sort();
 
   const filteredDoctors = doctors.filter((doc) => {
@@ -487,15 +510,21 @@ export const Doctors = () => {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div className="form-group">
-                  <label className="form-label">Specialization</label>
+                  <label className="form-label">Specialization *</label>
                   <input
                     type="text"
+                    list="modal-specialization-list"
                     className="form-input"
-                    placeholder="e.g. Cardiology"
+                    placeholder="Select or type specialization (e.g. Cardiology)"
                     value={formData.specialization}
                     onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
                     required
                   />
+                  <datalist id="modal-specialization-list">
+                    {allSpecialities.map((spec, idx) => (
+                      <option key={idx} value={spec} />
+                    ))}
+                  </datalist>
                 </div>
                 <div className="form-group">
                   <label className="form-label">Qualification</label>

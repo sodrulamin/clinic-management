@@ -253,8 +253,21 @@ export const Appointments = () => {
     }
   };
 
+  const todayStr = new Date().toISOString().split('T')[0];
+  const selectedDoctorObj = doctors.find((d) => String(d.id) === String(formData.doctorId));
+  const isPastDate = formData.appointmentDate ? formData.appointmentDate < todayStr : false;
+  const isNonWorkingDay = Boolean(formData.doctorId && formData.appointmentDate && !isPastDate && availableShifts.length === 0);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isPastDate) {
+      alert('Cannot schedule appointment for a past date.');
+      return;
+    }
+    if (isNonWorkingDay || availableShifts.length === 0) {
+      alert(`Selected doctor does not have any configured slots on ${formData.appointmentDate}. Please select a working day.`);
+      return;
+    }
     try {
       const payload = {
         ...formData,
@@ -794,11 +807,27 @@ export const Appointments = () => {
                 <label className="form-label">Appointment Date *</label>
                 <input
                   type="date"
+                  min={todayStr}
                   className="form-input"
                   value={formData.appointmentDate}
                   onChange={(e) => setFormData({ ...formData, appointmentDate: e.target.value })}
                   required
                 />
+                {selectedDoctorObj && (
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    🗓️ Doctor Schedule: <strong>{selectedDoctorObj.workingHours || 'Everyday'}</strong>
+                  </div>
+                )}
+                {isPastDate && (
+                  <div style={{ color: '#ef4444', fontSize: '0.8rem', fontWeight: 600, marginTop: '6px', backgroundColor: '#fef2f2', padding: '6px 10px', borderRadius: '6px', border: '1px solid #fca5a5' }}>
+                    ⚠️ Cannot select a past date. Please select today or a future date.
+                  </div>
+                )}
+                {isNonWorkingDay && (
+                  <div style={{ color: '#ef4444', fontSize: '0.8rem', fontWeight: 600, marginTop: '6px', backgroundColor: '#fef2f2', padding: '6px 10px', borderRadius: '6px', border: '1px solid #fca5a5' }}>
+                    ⚠️ {selectedDoctorObj?.fullName} has no configured slots on this date ({formData.appointmentDate}). Please select a working day.
+                  </div>
+                )}
               </div>
 
               {/* Doctor Shift Selector */}
@@ -821,9 +850,9 @@ export const Appointments = () => {
                   <input
                     type="text"
                     className="form-input"
-                    placeholder="Auto-generated shift / slot"
+                    placeholder="No available shifts on this date"
                     value={formData.timeSlot || ''}
-                    onChange={(e) => setFormData({ ...formData, timeSlot: e.target.value })}
+                    disabled
                   />
                 )}
               </div>
@@ -842,7 +871,11 @@ export const Appointments = () => {
                 <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary">
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={isPastDate || isNonWorkingDay || availableShifts.length === 0}
+                >
                   Confirm Appointment
                 </button>
               </div>

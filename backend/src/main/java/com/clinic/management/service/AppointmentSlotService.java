@@ -1,5 +1,6 @@
 package com.clinic.management.service;
 
+import com.clinic.management.dto.DoctorShiftDto;
 import com.clinic.management.entity.Appointment;
 import com.clinic.management.entity.AppointmentRequest;
 import com.clinic.management.entity.Doctor;
@@ -8,9 +9,11 @@ import com.clinic.management.repository.AppointmentRequestRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -22,21 +25,153 @@ public class AppointmentSlotService {
     private final AppointmentRepository appointmentRepository;
     private final AppointmentRequestRepository requestRepository;
 
-    public String determineNextAvailableSlot(Doctor doctor, LocalDate date) {
-        LocalTime startTime = LocalTime.of(9, 0);
-        LocalTime endTime = LocalTime.of(17, 0);
+    private static final String[] DAY_SHORTS = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
+    private static final String[] DAY_FULLS = {"SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"};
 
-        if (doctor.getWorkingHours() != null && !doctor.getWorkingHours().isBlank()) {
-            try {
-                Pattern pattern = Pattern.compile("(\\d{1,2}:\\d{2})\\s*-\\s*(\\d{1,2}:\\d{2})");
-                Matcher matcher = pattern.matcher(doctor.getWorkingHours());
-                if (matcher.find()) {
-                    startTime = LocalTime.parse(matcher.group(1));
-                    endTime = LocalTime.parse(matcher.group(2));
+    public List<DoctorShiftDto> getDoctorShiftsForDate(Doctor doctor, LocalDate date) {
+        List<DoctorShiftDto> shifts = new ArrayList<>();
+        if (doctor == null || doctor.getWorkingHours() == null || doctor.getWorkingHours().isBlank()) {
+            shifts.add(createShiftDto(1, LocalTime.of(9, 0), LocalTime.of(17, 0)));
+            return shifts;
+        }
+
+        String scheduleStr = doctor.getWorkingHours().trim();
+        DayOfWeek targetDay = date.getDayOfWeek();
+        int dayIndex = targetDay.getValue() % 7; // 0=Sunday, 1=Monday, ..., 6=Saturday
+        String targetShort = DAY_SHORTS[dayIndex];
+        String targetFull = DAY_FULLS[dayIndex];
+
+        String[] groups = scheduleStr.split(";");
+        boolean matchedGroup = false;
+
+        for (String group : groups) {
+            group = group.trim();
+            if (group.isEmpty()) continue;
+
+            String daysPart = "";
+            String timesPart = group;
+
+            if (group.contains(":")) {
+                String[] parts = group.split(":", 2);
+                daysPart = parts[0].trim();
+                timesPart = parts[1].trim();
+            }
+
+            if (daysPart.isEmpty() || matchesDayOfWeek(daysPart, dayIndex, targetShort, targetFull)) {
+                matchedGroup = true;
+                List<LocalTime[]> timeRanges = parseTimeRanges(timesPart);
+                int idx = 1;
+                for (LocalTime[] range : timeRanges) {
+                    shifts.add(createShiftDto(idx++, range[0], range[1]));
                 }
+                break;
+            }
+        }
+
+        if (!matchedGroup && shifts.isEmpty()) {
+            if (!scheduleStr.contains(":")) {
+                List<LocalTime[]> timeRanges = parseTimeRanges(scheduleStr);
+                int idx = 1;
+                for (LocalTime[] range : timeRanges) {
+                    shifts.add(createShiftDto(idx++, range[0], range[1]));
+                }
+            }
+        }
+
+        return shifts;
+    }
+
+    private DoctorShiftDto createShiftDto(int index, LocalTime start, LocalTime end) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm a");
+        String label = "Shift " + index + ": " + start.format(formatter) + " - " + end.format(formatter);
+        return DoctorShiftDto.builder()
+                .shiftIndex(index)
+                .startTime(start.toString())
+                .endTime(end.toString())
+                .displayLabel(label)
+                .build();
+    }
+
+    private boolean matchesDayOfWeek(String daysPart, int targetDayIndex, String targetShort, String targetFull) {
+        String str = daysPart.toLowerCase();
+        if (str.contains("everyday") || str.contains("daily") || str.contains("all days") || str.contains("7 days")) {
+            return true;
+        }
+
+        if (str.contains(targetShort.toLowerCase()) || str.contains(targetFull.toLowerCase())) {
+            return true;
+        }
+
+        for (int startIdx = 0; startIdx < 7; startIdx++) {
+            for (int endIdx = 0; endIdx < 7; endIdx++) {
+                if (startIdx == endIdx) continue;
+                String sShort = DAY_SHORTS[startIdx].toLowerCase();
+                String sFull = DAY_FULLS[startIdx].toLowerCase();
+                String eShort = DAY_SHORTS[endIdx].toLowerCase();
+                String eFull = DAY_FULLS[endIdx].toLowerCase();
+
+                Pattern rangePattern = Pattern.compile("(" + sShort + "|" + sFull + ")\\s*-\\s*(" + eShort + "|" + eFull + ")");
+                if (rangePattern.matcher(str).find()) {
+                    int i = startIdx;
+                    while (true) {
+                        if (i == targetDayIndex) return true;
+                        if (i == endIdx) break;
+                        i = (i + 1) % 7;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private List<LocalTime[]> parseTimeRanges(String timesStr) {
+        List<LocalTime[]> ranges = new ArrayList<>();
+        Pattern pattern = Pattern.compile("(\\d{1,2}:\\d{2})\\s*-\\s*(\\d{1,2}:\\d{2})");
+        Matcher matcher = pattern.matcher(timesStr);
+        while (matcher.find()) {
+            try {
+                LocalTime start = LocalTime.parse(matcher.group(1));
+                LocalTime end = LocalTime.parse(matcher.group(2));
+                ranges.add(new LocalTime[]{start, end});
             } catch (Exception ignored) {
             }
         }
+        if (ranges.isEmpty()) {
+            ranges.add(new LocalTime[]{LocalTime.of(9, 0), LocalTime.of(17, 0)});
+        }
+        return ranges;
+    }
+
+    public String determineNextAvailableSlot(Doctor doctor, LocalDate date) {
+        return determineNextAvailableSlot(doctor, date, null);
+    }
+
+    public String determineNextAvailableSlot(Doctor doctor, LocalDate date, String targetShift) {
+        List<DoctorShiftDto> shifts = getDoctorShiftsForDate(doctor, date);
+
+        if (shifts.isEmpty()) {
+            String workingHoursDisplay = doctor.getWorkingHours() != null && !doctor.getWorkingHours().isBlank()
+                    ? doctor.getWorkingHours()
+                    : "Not specified";
+            throw new RuntimeException(doctor.getFullName() + " does not consult on " + date.getDayOfWeek() + " (" + date + "). Doctor schedule: " + workingHoursDisplay);
+        }
+
+        DoctorShiftDto selectedShift = shifts.get(0);
+        if (targetShift != null && !targetShift.isBlank()) {
+            for (DoctorShiftDto shift : shifts) {
+                if (shift.getDisplayLabel().equalsIgnoreCase(targetShift) ||
+                    String.valueOf(shift.getShiftIndex()).equals(targetShift) ||
+                    shift.getStartTime().equalsIgnoreCase(targetShift) ||
+                    targetShift.toLowerCase().contains("shift " + shift.getShiftIndex())) {
+                    selectedShift = shift;
+                    break;
+                }
+            }
+        }
+
+        LocalTime startTime = LocalTime.parse(selectedShift.getStartTime());
+        LocalTime endTime = LocalTime.parse(selectedShift.getEndTime());
 
         List<Appointment> existingAppointments = appointmentRepository.findByDoctorIdAndAppointmentDate(doctor.getId(), date)
                 .stream()
@@ -52,50 +187,20 @@ public class AppointmentSlotService {
                 ? doctor.getAppointmentDurationMinutes()
                 : 20;
 
-        LocalTime lastEndTime = startTime;
+        LocalTime currentSlotStart = startTime;
 
-        for (Appointment app : existingAppointments) {
-            LocalTime end = extractEndTime(app.getTimeSlot(), duration);
-            if (end != null && end.isAfter(lastEndTime)) {
-                lastEndTime = end;
+        while (currentSlotStart.plusMinutes(duration).isBefore(endTime) || currentSlotStart.plusMinutes(duration).equals(endTime)) {
+            LocalTime currentSlotEnd = currentSlotStart.plusMinutes(duration);
+
+            if (!isSlotOccupied(currentSlotStart, currentSlotEnd, existingAppointments, existingRequests)) {
+                DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("hh:mm a");
+                return currentSlotStart.format(timeFormatter) + " - " + currentSlotEnd.format(timeFormatter);
             }
+
+            currentSlotStart = currentSlotEnd;
         }
 
-        for (AppointmentRequest req : existingRequests) {
-            LocalTime end = extractEndTime(req.getPreferredTime(), duration);
-            if (end != null && end.isAfter(lastEndTime)) {
-                lastEndTime = end;
-            }
-        }
-
-        LocalTime newSlotStart = lastEndTime;
-        LocalTime newSlotEnd = newSlotStart.plusMinutes(duration);
-
-        String workingHoursDisplay = doctor.getWorkingHours() != null && !doctor.getWorkingHours().isBlank()
-                ? doctor.getWorkingHours()
-                : "09:00 - 17:00";
-
-        if (newSlotEnd.isAfter(endTime)) {
-            throw new RuntimeException("No available appointment slots remaining for " + doctor.getFullName() + " on " + date + ". Doctor working hours: " + workingHoursDisplay + ".");
-        }
-
-        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("hh:mm a");
-        return newSlotStart.format(timeFormatter) + " - " + newSlotEnd.format(timeFormatter);
-    }
-
-    private LocalTime extractEndTime(String timeSlotStr, int defaultDuration) {
-        if (timeSlotStr == null || timeSlotStr.isBlank()) return null;
-        try {
-            String[] parts = timeSlotStr.split("-");
-            if (parts.length == 2) {
-                return parseTimeQuietly(parts[1].trim());
-            } else if (parts.length == 1) {
-                LocalTime start = parseTimeQuietly(parts[0].trim());
-                return start != null ? start.plusMinutes(defaultDuration) : null;
-            }
-        } catch (Exception ignored) {
-        }
-        return null;
+        throw new RuntimeException("No available appointment slots remaining in " + selectedShift.getDisplayLabel() + " for " + doctor.getFullName() + " on " + date + ".");
     }
 
     private boolean isSlotOccupied(LocalTime slotStart, LocalTime slotEnd, List<Appointment> appointments, List<AppointmentRequest> requests) {

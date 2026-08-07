@@ -57,8 +57,8 @@ public class AppointmentRequestService {
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
 
         String preferredTime = requestDto.getPreferredTime();
-        if (preferredTime == null || preferredTime.isBlank()) {
-            preferredTime = appointmentSlotService.determineNextAvailableSlot(doctor, requestDto.getPreferredDate());
+        if (preferredTime == null || preferredTime.isBlank() || preferredTime.toLowerCase().startsWith("shift") || preferredTime.toLowerCase().contains("shift")) {
+            preferredTime = appointmentSlotService.determineNextAvailableSlot(doctor, requestDto.getPreferredDate(), preferredTime);
         }
 
         AppointmentRequest request = AppointmentRequest.builder()
@@ -108,12 +108,17 @@ public class AppointmentRequestService {
             patientRepository.save(patient);
         }
 
+        String finalTimeSlot = req.getPreferredTime();
+        if (finalTimeSlot == null || finalTimeSlot.isBlank() || finalTimeSlot.toLowerCase().startsWith("shift") || finalTimeSlot.toLowerCase().contains("shift")) {
+            finalTimeSlot = appointmentSlotService.determineNextAvailableSlot(req.getDoctor(), req.getPreferredDate(), finalTimeSlot);
+        }
+
         // Create scheduled appointment
         Appointment appointment = Appointment.builder()
                 .doctor(req.getDoctor())
                 .patient(patient)
                 .appointmentDate(req.getPreferredDate())
-                .timeSlot(req.getPreferredTime())
+                .timeSlot(finalTimeSlot)
                 .reason(req.getReason())
                 .status(Appointment.AppointmentStatus.SCHEDULED)
                 .build();

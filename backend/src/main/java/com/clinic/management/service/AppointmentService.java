@@ -201,8 +201,8 @@ public class AppointmentService {
         }
 
         String timeSlot = request.getTimeSlot();
-        if (timeSlot == null || timeSlot.isBlank()) {
-            timeSlot = appointmentSlotService.determineNextAvailableSlot(doctor, request.getAppointmentDate());
+        if (timeSlot == null || timeSlot.isBlank() || timeSlot.toLowerCase().startsWith("shift") || timeSlot.toLowerCase().contains("shift")) {
+            timeSlot = appointmentSlotService.determineNextAvailableSlot(doctor, request.getAppointmentDate(), timeSlot);
         }
 
         Appointment appointment = Appointment.builder()

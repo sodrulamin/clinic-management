@@ -121,6 +121,30 @@ export const Doctors = () => {
   const [usernameSuggestions, setUsernameSuggestions] = useState([]);
   const [customQualInput, setCustomQualInput] = useState('');
 
+  const [useCustomSchedule, setUseCustomSchedule] = useState(false);
+  const [scheduleGroups, setScheduleGroups] = useState([
+    {
+      days: ['Sun', 'Tue', 'Thu'],
+      shifts: [
+        { start: '09:00', end: '13:00' },
+        { start: '17:00', end: '21:00' },
+      ],
+    },
+  ]);
+
+  const updateWorkingHoursFromGroups = (groups) => {
+    const formatted = groups
+      .map((g) => {
+        const daysStr = g.days.join(', ');
+        const shiftsStr = g.shifts.map((s) => `${s.start} - ${s.end}`).join(', ');
+        return daysStr ? `${daysStr}: ${shiftsStr}` : shiftsStr;
+      })
+      .filter(Boolean)
+      .join('; ');
+
+    setFormData((prev) => ({ ...prev, workingHours: formatted }));
+  };
+
   const [formData, setFormData] = useState({
     fullName: '',
     specialization: '',
@@ -131,7 +155,7 @@ export const Doctors = () => {
     consultationFee: 100,
     maxDiscountPercent: 0,
     maxDiscountFixed: 0,
-    workingHours: 'Mon-Fri 09:00 - 17:00',
+    workingHours: 'Sun, Tue, Thu: 09:00 - 13:00, 17:00 - 21:00',
     appointmentDurationMinutes: 20,
     profileImage: '',
     active: true,
@@ -753,25 +777,179 @@ export const Doctors = () => {
                 </div>
               )}
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div className="form-group">
-                  <label className="form-label">Working Hours / Days</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={formData.workingHours}
-                    onChange={(e) => setFormData({ ...formData, workingHours: e.target.value })}
-                  />
+              {/* Doctor Schedule & Multi-Shift Builder */}
+              <div style={{ backgroundColor: 'var(--table-header-bg)', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '14px', marginTop: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    📅 Working Days & Multi-Shift Schedule
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    style={{ padding: '2px 8px', fontSize: '0.74rem' }}
+                    onClick={() => setUseCustomSchedule(!useCustomSchedule)}
+                  >
+                    {useCustomSchedule ? 'Use Schedule Builder' : 'Edit Plain Text'}
+                  </button>
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Appointment Duration (Mins)</label>
-                  <input
-                    type="number"
-                    className="form-input"
-                    value={formData.appointmentDurationMinutes}
-                    onChange={(e) => setFormData({ ...formData, appointmentDurationMinutes: parseInt(e.target.value) || 20 })}
-                  />
+
+                {!useCustomSchedule ? (
+                  <div>
+                    {scheduleGroups.map((group, groupIdx) => (
+                      <div key={groupIdx} style={{ padding: '10px', backgroundColor: 'var(--bg-card)', borderRadius: '8px', border: '1px solid var(--border-color)', marginBottom: '10px' }}>
+                        {/* Day Toggles */}
+                        <div style={{ marginBottom: '8px' }}>
+                          <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+                            Select Days (Group {groupIdx + 1}):
+                          </label>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                            {DAYS.map((d) => {
+                              const isSelected = group.days.includes(d.short);
+                              return (
+                                <button
+                                  key={d.short}
+                                  type="button"
+                                  style={{
+                                    padding: '3px 8px',
+                                    fontSize: '0.75rem',
+                                    borderRadius: '4px',
+                                    border: isSelected ? '1px solid var(--primary)' : '1px solid var(--border-color)',
+                                    backgroundColor: isSelected ? 'var(--primary)' : 'var(--table-header-bg)',
+                                    color: isSelected ? '#ffffff' : 'var(--text-main)',
+                                    cursor: 'pointer',
+                                    fontWeight: isSelected ? 600 : 400
+                                  }}
+                                  onClick={() => {
+                                    const newDays = isSelected
+                                      ? group.days.filter((day) => day !== d.short)
+                                      : [...group.days, d.short];
+                                    const updatedGroups = scheduleGroups.map((g, idx) => idx === groupIdx ? { ...g, days: newDays } : g);
+                                    setScheduleGroups(updatedGroups);
+                                    updateWorkingHoursFromGroups(updatedGroups);
+                                  }}
+                                >
+                                  {d.short}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Shifts */}
+                        {group.shifts.map((shift, shiftIdx) => (
+                          <div key={shiftIdx} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 600, minWidth: '55px', color: 'var(--primary)' }}>Shift {shiftIdx + 1}:</span>
+                            <input
+                              type="time"
+                              className="form-input"
+                              style={{ padding: '2px 6px', fontSize: '0.8rem', width: '110px' }}
+                              value={shift.start}
+                              onChange={(e) => {
+                                const newShifts = group.shifts.map((s, idx) => idx === shiftIdx ? { ...s, start: e.target.value } : s);
+                                const updatedGroups = scheduleGroups.map((g, idx) => idx === groupIdx ? { ...g, shifts: newShifts } : g);
+                                setScheduleGroups(updatedGroups);
+                                updateWorkingHoursFromGroups(updatedGroups);
+                              }}
+                            />
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>to</span>
+                            <input
+                              type="time"
+                              className="form-input"
+                              style={{ padding: '2px 6px', fontSize: '0.8rem', width: '110px' }}
+                              value={shift.end}
+                              onChange={(e) => {
+                                const newShifts = group.shifts.map((s, idx) => idx === shiftIdx ? { ...s, end: e.target.value } : s);
+                                const updatedGroups = scheduleGroups.map((g, idx) => idx === groupIdx ? { ...g, shifts: newShifts } : g);
+                                setScheduleGroups(updatedGroups);
+                                updateWorkingHoursFromGroups(updatedGroups);
+                              }}
+                            />
+                            {group.shifts.length > 1 && (
+                              <button
+                                type="button"
+                                style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}
+                                onClick={() => {
+                                  const newShifts = group.shifts.filter((_, idx) => idx !== shiftIdx);
+                                  const updatedGroups = scheduleGroups.map((g, idx) => idx === groupIdx ? { ...g, shifts: newShifts } : g);
+                                  setScheduleGroups(updatedGroups);
+                                  updateWorkingHoursFromGroups(updatedGroups);
+                                }}
+                              >
+                                <X size={14} />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '2px 8px', fontSize: '0.74rem' }}
+                            onClick={() => {
+                              const newShifts = [...group.shifts, { start: '14:00', end: '18:00' }];
+                              const updatedGroups = scheduleGroups.map((g, idx) => idx === groupIdx ? { ...g, shifts: newShifts } : g);
+                              setScheduleGroups(updatedGroups);
+                              updateWorkingHoursFromGroups(updatedGroups);
+                            }}
+                          >
+                            + Add Shift
+                          </button>
+                          {scheduleGroups.length > 1 && (
+                            <button
+                              type="button"
+                              className="btn btn-danger btn-sm"
+                              style={{ padding: '2px 8px', fontSize: '0.74rem' }}
+                              onClick={() => {
+                                const updatedGroups = scheduleGroups.filter((_, idx) => idx !== groupIdx);
+                                setScheduleGroups(updatedGroups);
+                                updateWorkingHoursFromGroups(updatedGroups);
+                              }}
+                            >
+                              Remove Day Group
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      style={{ padding: '4px 10px', fontSize: '0.76rem', marginTop: '4px' }}
+                      onClick={() => {
+                        const updatedGroups = [...scheduleGroups, { days: ['Sat'], shifts: [{ start: '09:00', end: '13:00' }] }];
+                        setScheduleGroups(updatedGroups);
+                        updateWorkingHoursFromGroups(updatedGroups);
+                      }}
+                    >
+                      + Add Another Day Group
+                    </button>
+                  </div>
+                ) : (
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={formData.workingHours}
+                      onChange={(e) => setFormData({ ...formData, workingHours: e.target.value })}
+                    />
+                  </div>
+                )}
+
+                <div style={{ marginTop: '10px', padding: '6px 10px', backgroundColor: 'var(--card-bg)', borderRadius: '6px', fontSize: '0.78rem', color: 'var(--text-main)', border: '1px solid var(--border-color)' }}>
+                  <strong>Formatted Schedule:</strong> <span style={{ color: 'var(--primary)', fontWeight: 600 }}>{formData.workingHours || 'Not configured'}</span>
                 </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Appointment Slot Duration (Minutes)</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  value={formData.appointmentDurationMinutes}
+                  onChange={(e) => setFormData({ ...formData, appointmentDurationMinutes: parseInt(e.target.value) || 20 })}
+                />
               </div>
 
               {/* Doctor User Login Credentials (New Doctor Only) - Placed at Bottom */}

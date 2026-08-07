@@ -21,10 +21,27 @@ export const AppointmentRequests = () => {
     patientId: '',
     doctorId: '',
     preferredDate: new Date().toISOString().split('T')[0],
+    preferredTime: '',
     reason: '',
   });
 
   const [patients, setPatients] = useState([]);
+  const [availableShifts, setAvailableShifts] = useState([]);
+
+  useEffect(() => {
+    if (formData.doctorId && formData.preferredDate) {
+      api.get(`/doctors/${formData.doctorId}/shifts?date=${formData.preferredDate}`)
+        .then((res) => {
+          setAvailableShifts(res.data || []);
+          if (res.data && res.data.length > 0) {
+            setFormData((prev) => ({ ...prev, preferredTime: res.data[0].displayLabel }));
+          }
+        })
+        .catch(() => setAvailableShifts([]));
+    } else {
+      setAvailableShifts([]);
+    }
+  }, [formData.doctorId, formData.preferredDate]);
 
   const fetchRequests = async () => {
     try {
@@ -382,7 +399,7 @@ export const AppointmentRequests = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Preferred Date</label>
+                <label className="form-label">Preferred Date *</label>
                 <input
                   type="date"
                   className="form-input"
@@ -390,6 +407,33 @@ export const AppointmentRequests = () => {
                   onChange={(e) => setFormData({ ...formData, preferredDate: e.target.value })}
                   required
                 />
+              </div>
+
+              {/* Preferred Doctor Shift Selector */}
+              <div className="form-group">
+                <label className="form-label">Preferred Doctor Shift *</label>
+                {availableShifts.length > 0 ? (
+                  <select
+                    className="form-select"
+                    value={formData.preferredTime || ''}
+                    onChange={(e) => setFormData({ ...formData, preferredTime: e.target.value })}
+                    required
+                  >
+                    {availableShifts.map((shift, idx) => (
+                      <option key={idx} value={shift.displayLabel}>
+                        {shift.displayLabel}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g. Shift 1 (09:00 AM - 01:00 PM)"
+                    value={formData.preferredTime || ''}
+                    onChange={(e) => setFormData({ ...formData, preferredTime: e.target.value })}
+                  />
+                )}
               </div>
 
               <div className="form-group">

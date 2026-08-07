@@ -1,11 +1,14 @@
 package com.clinic.management.controller;
 
 import com.clinic.management.dto.CreateDoctorRequest;
+import com.clinic.management.dto.DoctorShiftDto;
 import com.clinic.management.entity.Doctor;
 import com.clinic.management.exception.UsernameUnavailableException;
+import com.clinic.management.service.AppointmentSlotService;
 import com.clinic.management.service.DoctorService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -13,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +27,7 @@ import java.util.Map;
 public class DoctorController {
 
     private final DoctorService doctorService;
+    private final AppointmentSlotService appointmentSlotService;
 
     @GetMapping
     @PreAuthorize("@securityService.hasAccess('/doctors')")
@@ -35,6 +40,15 @@ public class DoctorController {
     public ResponseEntity<Doctor> getDoctorById(@PathVariable Long id) {
         return doctorService.getDoctorById(id)
                 .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/{id}/shifts")
+    public ResponseEntity<List<DoctorShiftDto>> getDoctorShifts(
+            @PathVariable Long id,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return doctorService.getDoctorById(id)
+                .map(doctor -> ResponseEntity.ok(appointmentSlotService.getDoctorShiftsForDate(doctor, date)))
                 .orElse(ResponseEntity.notFound().build());
     }
 

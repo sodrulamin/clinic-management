@@ -86,10 +86,28 @@ export const Appointments = () => {
     patientId: '',
     doctorId: '',
     appointmentDate: new Date().toISOString().split('T')[0],
+    timeSlot: '',
     reason: '',
     age: '',
     gender: '',
   });
+
+  const [availableShifts, setAvailableShifts] = useState([]);
+
+  useEffect(() => {
+    if (formData.doctorId && formData.appointmentDate) {
+      api.get(`/doctors/${formData.doctorId}/shifts?date=${formData.appointmentDate}`)
+        .then((res) => {
+          setAvailableShifts(res.data || []);
+          if (res.data && res.data.length > 0) {
+            setFormData((prev) => ({ ...prev, timeSlot: res.data[0].displayLabel }));
+          }
+        })
+        .catch(() => setAvailableShifts([]));
+    } else {
+      setAvailableShifts([]);
+    }
+  }, [formData.doctorId, formData.appointmentDate]);
 
   // Prescription form state
   const [prescriptionForm, setPrescriptionForm] = useState({
@@ -781,6 +799,33 @@ export const Appointments = () => {
                   onChange={(e) => setFormData({ ...formData, appointmentDate: e.target.value })}
                   required
                 />
+              </div>
+
+              {/* Doctor Shift Selector */}
+              <div className="form-group">
+                <label className="form-label">Doctor Shift *</label>
+                {availableShifts.length > 0 ? (
+                  <select
+                    className="form-select"
+                    value={formData.timeSlot || ''}
+                    onChange={(e) => setFormData({ ...formData, timeSlot: e.target.value })}
+                    required
+                  >
+                    {availableShifts.map((shift, idx) => (
+                      <option key={idx} value={shift.displayLabel}>
+                        {shift.displayLabel}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Auto-generated shift / slot"
+                    value={formData.timeSlot || ''}
+                    onChange={(e) => setFormData({ ...formData, timeSlot: e.target.value })}
+                  />
+                )}
               </div>
 
               <div className="form-group">

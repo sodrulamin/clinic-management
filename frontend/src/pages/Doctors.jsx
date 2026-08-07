@@ -33,6 +33,25 @@ const STANDARD_SPECIALIZATIONS = [
   'Urology',
 ];
 
+const STANDARD_QUALIFICATIONS = [
+  'MBBS',
+  'MD',
+  'MS',
+  'FCPS',
+  'FRCS',
+  'MRCP',
+  'MDS',
+  'BDS',
+  'FACS',
+  'DNB',
+  'DGO',
+  'DCH',
+  'DMRD',
+  'D-CARD',
+  'PhD',
+  'Diploma',
+];
+
 const matchesDay = (workingHoursStr, selectedDayShort) => {
   if (!selectedDayShort) return true;
   if (!workingHoursStr) return false;
@@ -100,6 +119,7 @@ export const Doctors = () => {
 
   const [usernameError, setUsernameError] = useState(null);
   const [usernameSuggestions, setUsernameSuggestions] = useState([]);
+  const [customQualInput, setCustomQualInput] = useState('');
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -135,6 +155,7 @@ export const Doctors = () => {
   const openModal = (doctor = null) => {
     setUsernameError(null);
     setUsernameSuggestions([]);
+    setCustomQualInput('');
     if (doctor) {
       setEditingDoctor(doctor);
       setFormData({
@@ -258,6 +279,38 @@ export const Doctors = () => {
       ...doctors.map((d) => d.specialization).filter(Boolean),
     ])
   ).sort();
+
+  const allQualifications = Array.from(
+    new Set([
+      ...STANDARD_QUALIFICATIONS,
+      ...doctors.flatMap((d) => (d.qualification ? d.qualification.split(',').map((q) => q.trim()) : [])).filter(Boolean),
+    ])
+  ).sort();
+
+  const selectedQuals = formData.qualification
+    ? formData.qualification.split(',').map((s) => s.trim()).filter(Boolean)
+    : [];
+
+  const addQualification = (qualName) => {
+    const trimmed = qualName.trim();
+    if (!trimmed) return;
+    const currentList = formData.qualification
+      ? formData.qualification.split(',').map((s) => s.trim()).filter(Boolean)
+      : [];
+    if (!currentList.includes(trimmed)) {
+      const newList = [...currentList, trimmed];
+      setFormData((prev) => ({ ...prev, qualification: newList.join(', ') }));
+    }
+    setCustomQualInput('');
+  };
+
+  const removeQualification = (qualName) => {
+    const currentList = formData.qualification
+      ? formData.qualification.split(',').map((s) => s.trim()).filter(Boolean)
+      : [];
+    const newList = currentList.filter((q) => q !== qualName);
+    setFormData((prev) => ({ ...prev, qualification: newList.join(', ') }));
+  };
 
   const filteredDoctors = doctors.filter((doc) => {
     if (searchFilters.name.trim()) {
@@ -537,14 +590,118 @@ export const Doctors = () => {
                 </div>
                 <div className="form-group">
                   <label className="form-label">Qualification *</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="e.g. MD, MBBS"
-                    value={formData.qualification}
-                    onChange={(e) => setFormData({ ...formData, qualification: e.target.value })}
-                    required
-                  />
+
+                  {/* Selected qualification badge tags */}
+                  {selectedQuals.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                      {selectedQuals.map((qual, idx) => (
+                        <span
+                          key={idx}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            padding: '3px 9px',
+                            backgroundColor: 'var(--primary-light)',
+                            color: 'var(--primary)',
+                            fontSize: '0.8rem',
+                            fontWeight: 600,
+                            borderRadius: '16px',
+                            border: '1px solid rgba(79, 70, 229, 0.2)'
+                          }}
+                        >
+                          <span>{qual}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeQualification(qual)}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: 'var(--primary)',
+                              cursor: 'pointer',
+                              padding: 0,
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}
+                            title="Remove"
+                          >
+                            <X size={13} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Input with suggestive datalist */}
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <input
+                      type="text"
+                      list="modal-qualification-list"
+                      className="form-input"
+                      placeholder="Select or type custom qualification..."
+                      value={customQualInput}
+                      onChange={(e) => setCustomQualInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ',') {
+                          e.preventDefault();
+                          addQualification(customQualInput);
+                        }
+                      }}
+                      required={selectedQuals.length === 0}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      style={{ padding: '0 12px', whiteSpace: 'nowrap' }}
+                      onClick={() => addQualification(customQualInput)}
+                      disabled={!customQualInput.trim()}
+                    >
+                      Add
+                    </button>
+                  </div>
+
+                  <datalist id="modal-qualification-list">
+                    {allQualifications
+                      .filter((q) => !selectedQuals.includes(q))
+                      .map((qual, idx) => (
+                        <option key={idx} value={qual} />
+                      ))}
+                  </datalist>
+
+                  {/* Quick suggestion pills */}
+                  <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                    <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', alignSelf: 'center', marginRight: '2px' }}>Suggestions:</span>
+                    {allQualifications
+                      .slice(0, 10)
+                      .map((qual, idx) => {
+                        const isSelected = selectedQuals.includes(qual);
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            style={{
+                              padding: '2px 8px',
+                              fontSize: '0.74rem',
+                              borderRadius: '6px',
+                              border: isSelected ? '1px solid var(--primary)' : '1px solid var(--border-color)',
+                              backgroundColor: isSelected ? 'var(--primary)' : 'var(--table-header-bg)',
+                              color: isSelected ? '#ffffff' : 'var(--text-main)',
+                              cursor: 'pointer',
+                              fontWeight: isSelected ? 600 : 400
+                            }}
+                            onClick={() => {
+                              if (isSelected) {
+                                removeQualification(qual);
+                              } else {
+                                addQualification(qual);
+                              }
+                            }}
+                          >
+                            {isSelected ? `✓ ${qual}` : `+ ${qual}`}
+                          </button>
+                        );
+                      })}
+                  </div>
                 </div>
               </div>
 

@@ -197,6 +197,15 @@ export const Doctors = () => {
     setUsernameError(null);
     setUsernameSuggestions([]);
 
+    if (!formData.qualification || !formData.qualification.trim()) {
+      alert('Qualification is required.');
+      return;
+    }
+    if (!formData.phone || !formData.phone.trim()) {
+      alert('Phone number is required.');
+      return;
+    }
+
     if (!editingDoctor) {
       if (!formData.username || !formData.username.trim()) {
         setUsernameError('Username is required for doctor creation.');
@@ -527,25 +536,28 @@ export const Doctors = () => {
                   </datalist>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Qualification</label>
+                  <label className="form-label">Qualification *</label>
                   <input
                     type="text"
                     className="form-input"
                     placeholder="e.g. MD, MBBS"
                     value={formData.qualification}
                     onChange={(e) => setFormData({ ...formData, qualification: e.target.value })}
+                    required
                   />
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div className="form-group">
-                  <label className="form-label">Phone</label>
+                  <label className="form-label">Phone *</label>
                   <input
                     type="text"
                     className="form-input"
+                    placeholder="e.g. 01700000000"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    required
                   />
                 </div>
                 <div className="form-group">

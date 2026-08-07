@@ -101,7 +101,15 @@ public class DoctorService {
             throw new IllegalArgumentException("Password must be at least 6 characters long.");
         }
 
-        // 3. Save shared UserProfile
+        // 3. Mandatory Qualification & Phone Checks
+        if (request.getQualification() == null || request.getQualification().trim().isBlank()) {
+            throw new IllegalArgumentException("Qualification is required.");
+        }
+        if (request.getPhone() == null || request.getPhone().trim().isBlank()) {
+            throw new IllegalArgumentException("Phone number is required.");
+        }
+
+        // 4. Save shared UserProfile
         UserProfile userProfile = UserProfile.builder()
                 .fullName(request.getFullName())
                 .email(request.getEmail())
@@ -110,7 +118,7 @@ public class DoctorService {
                 .build();
         userProfile = userProfileRepository.save(userProfile);
 
-        // 4. Create User Account for Doctor
+        // 5. Create User Account for Doctor
         Role doctorRole = roleRepository.findByName("ROLE_DOCTOR")
                 .orElseThrow(() -> new RuntimeException("Role ROLE_DOCTOR not found"));
 
@@ -123,7 +131,7 @@ public class DoctorService {
                 .build();
         userRepository.save(user);
 
-        // 5. Create Doctor Profile
+        // 6. Create Doctor Profile
         Doctor doctor = Doctor.builder()
                 .userProfile(userProfile)
                 .specialization(request.getSpecialization())
@@ -162,6 +170,13 @@ public class DoctorService {
                     }
                 }
             }
+        }
+
+        if (updatedDoctor.getQualification() == null || updatedDoctor.getQualification().trim().isBlank()) {
+            throw new IllegalArgumentException("Qualification is required.");
+        }
+        if (updatedDoctor.getPhone() == null || updatedDoctor.getPhone().trim().isBlank()) {
+            throw new IllegalArgumentException("Phone number is required.");
         }
 
         doctor.setFullName(updatedDoctor.getFullName());

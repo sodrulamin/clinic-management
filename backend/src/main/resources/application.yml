@@ -34,8 +34,6 @@ management:
 
 
 logging:
-  file:
-    name: logs/app.log
   level:
     root: INFO
     com.clinic.management: INFO

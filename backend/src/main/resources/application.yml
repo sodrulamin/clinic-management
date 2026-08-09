@@ -31,9 +31,15 @@ management:
       exposure:
         include: health,info,metrics,prometheus
 
+
+
 logging:
-  pattern:
-    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+  file:
+    name: logs/app.log
+  level:
+    root: INFO
+    com.clinic.management: INFO
+    org.springframework.web: INFO
 
 app:
   jwt:

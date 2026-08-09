@@ -40,6 +40,16 @@ public class RequestResponseLoggingAspect {
 
         ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         HttpServletRequest request = attributes != null ? attributes.getRequest() : null;
+        HttpServletResponse response = attributes != null ? attributes.getResponse() : null;
+
+        String traceId = org.slf4j.MDC.get("traceId");
+        String spanId = org.slf4j.MDC.get("spanId");
+        if (response != null && traceId != null && !traceId.isBlank()) {
+            response.setHeader("X-Trace-Id", traceId);
+            if (spanId != null && !spanId.isBlank()) {
+                response.setHeader("X-Span-Id", spanId);
+            }
+        }
 
         String httpMethod = request != null ? request.getMethod() : "UNKNOWN";
         String requestURI = request != null ? request.getRequestURI() : "UNKNOWN";

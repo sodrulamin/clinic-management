@@ -4,7 +4,15 @@ import { ClipboardList, Check, X, Plus, Calendar, Stethoscope } from 'lucide-rea
 import { DoctorDatePicker } from '../components/DoctorDatePicker';
 
 export const AppointmentRequests = () => {
-  const today = new Date().toISOString().split('T')[0];
+  const getLocalDateString = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const today = getLocalDateString();
   const [requests, setRequests] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -21,7 +29,7 @@ export const AppointmentRequests = () => {
     gender: '',
     patientId: '',
     doctorId: '',
-    preferredDate: new Date().toISOString().split('T')[0],
+    preferredDate: getLocalDateString(),
     preferredTime: '',
     reason: '',
   });
@@ -110,7 +118,7 @@ export const AppointmentRequests = () => {
     }
   };
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getLocalDateString();
   const selectedDoctorObj = doctors.find((d) => String(d.id) === String(formData.doctorId));
   const isPastDate = formData.preferredDate ? formData.preferredDate < todayStr : false;
   const isNonWorkingDay = Boolean(formData.doctorId && formData.preferredDate && !isPastDate && availableShifts.length === 0);

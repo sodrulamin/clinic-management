@@ -27,7 +27,15 @@ export const Appointments = () => {
   const { user } = useContext(AuthContext);
   const isDoctor = user?.role === 'ROLE_DOCTOR';
 
-  const today = new Date().toISOString().split('T')[0];
+  const getLocalDateString = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const today = getLocalDateString();
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
   const [selectedDoctorId, setSelectedDoctorId] = useState('ALL');
@@ -86,7 +94,7 @@ export const Appointments = () => {
     patientEmail: '',
     patientId: '',
     doctorId: '',
-    appointmentDate: new Date().toISOString().split('T')[0],
+    appointmentDate: getLocalDateString(),
     timeSlot: '',
     reason: '',
     age: '',
@@ -254,7 +262,7 @@ export const Appointments = () => {
     }
   };
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getLocalDateString();
   const selectedDoctorObj = doctors.find((d) => String(d.id) === String(formData.doctorId));
   const isPastDate = formData.appointmentDate ? formData.appointmentDate < todayStr : false;
   const isNonWorkingDay = Boolean(formData.doctorId && formData.appointmentDate && !isPastDate && availableShifts.length === 0);

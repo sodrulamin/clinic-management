@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
 
-    <property name="CONSOLE_LOG_PATTERN"
-              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %5level [clinic-management,%X{traceId:-},%X{spanId:-}] ${PID:-} --- [%15.15thread] %-40.40logger{39} (%F:%L) : %msg%n"/>
-
-    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5p %t %c{1}:%L - %m%n</pattern>
+        </encoder>
+    </appender>
 
     <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="STDOUT"/>
     </root>
+
 </configuration>

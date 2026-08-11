@@ -503,49 +503,54 @@ export const Doctors = () => {
             </button>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))', gap: '20px' }}>
             {filteredDoctors.map((doc) => (
-              <div key={doc.id} className="card" style={{ marginBottom: 0, padding: '20px', position: 'relative' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+              <div key={doc.id} className="card" style={{ marginBottom: 0, padding: '20px', position: 'relative', display: 'flex', gap: '20px', alignItems: 'stretch' }}>
+                {/* Left Column: Fixed 200x200 Square Image */}
+                <div style={{ flexShrink: 0, width: '200px', height: '200px', display: 'flex', flexDirection: 'column' }}>
                   {doc.profileImage ? (
                     <img
                       src={doc.profileImage}
                       alt={doc.fullName}
-                      style={{ width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--primary)', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
+                      style={{ width: '100%', height: '100%', borderRadius: '8px', objectFit: 'cover', border: '3px solid var(--primary)', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
                     />
                   ) : (
-                    <div className="stat-icon teal" style={{ width: '100px', height: '100px', borderRadius: '50%' }}>
-                      <Stethoscope size={40} />
+                    <div className="stat-icon teal" style={{ width: '100%', height: '100%', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Stethoscope size={48} />
                     </div>
                   )}
-                  <div style={{ textAlign: 'center' }}>
-                    <h3 style={{ fontSize: '1.05rem', fontWeight: 700 }}>{doc.fullName}</h3>
+                </div>
+
+                {/* Right Column: Info */}
+                <div style={{ flexGrow: 1, minWidth: 0 }}>
+                  <div style={{ marginBottom: '12px' }}>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '0 0 4px 0' }}>{doc.fullName}</h3>
                     <span className="badge badge-info">{doc.specialization}</span>
                   </div>
-                </div>
 
-                <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.7 }}>
-                  <p><strong>Qualification:</strong> {doc.qualification || 'N/A'}</p>
-                  <p><strong>Room:</strong> {doc.roomNo || 'N/A'}</p>
-                  <p><strong>Fee:</strong> ৳{doc.consultationFee}</p>
-                  <p><strong>Max Discount Auth:</strong> {doc.maxDiscountPercent || 0}% / ৳{doc.maxDiscountFixed || 0}</p>
-                  <p><strong>Hours:</strong> {doc.workingHours}</p>
-                  <p><strong>Slot Duration:</strong> {doc.appointmentDurationMinutes || 20} mins</p>
-                  <p><strong>Contact:</strong> {doc.phone || doc.email}</p>
-                </div>
-
-                {canEditDoctor(doc) && (
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '16px', justifyContent: 'flex-end' }}>
-                    <button className="btn btn-secondary btn-sm" onClick={() => openModal(doc)}>
-                      <Edit size={14} /> {isDoctor && !isAdmin ? 'Update My Profile' : 'Update Profile'}
-                    </button>
-                    {isAdmin && (
-                      <button className="btn btn-danger btn-sm" onClick={() => handleDelete(doc.id)}>
-                        <Trash2 size={14} />
-                      </button>
-                    )}
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                    <p style={{ margin: '0 0 4px 0' }}><strong>Qualification:</strong> {doc.qualification || 'N/A'}</p>
+                    <p style={{ margin: '0 0 4px 0' }}><strong>Room:</strong> {doc.roomNo || 'N/A'}</p>
+                    <p style={{ margin: '0 0 4px 0' }}><strong>Fee:</strong> ৳{doc.consultationFee}</p>
+                    <p style={{ margin: '0 0 4px 0' }}><strong>Max Discount Auth:</strong> {doc.maxDiscountPercent || 0}% / ৳{doc.maxDiscountFixed || 0}</p>
+                    <p style={{ margin: '0 0 4px 0' }}><strong>Hours:</strong> {doc.workingHours}</p>
+                    <p style={{ margin: '0 0 4px 0' }}><strong>Slot Duration:</strong> {doc.appointmentDurationMinutes || 20} mins</p>
+                    <p style={{ margin: '0 0 4px 0' }}><strong>Contact:</strong> {doc.phone || doc.email}</p>
                   </div>
-                )}
+
+                  {canEditDoctor(doc) && (
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '16px', justifyContent: 'flex-end' }}>
+                      <button className="btn btn-secondary btn-sm" onClick={() => openModal(doc)}>
+                        <Edit size={14} /> {isDoctor && !isAdmin ? 'Update My Profile' : 'Update Profile'}
+                      </button>
+                      {isAdmin && (
+                        <button className="btn btn-danger btn-sm" onClick={() => handleDelete(doc.id)}>
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -567,17 +572,17 @@ export const Doctors = () => {
               <div className="form-group" style={{ textAlign: 'center', marginBottom: '20px' }}>
                 <div style={{ position: 'relative', display: 'inline-block' }}>
                   {imageUploading ? (
-                    <div style={{ width: '90px', height: '90px', borderRadius: '50%', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                    <div style={{ width: '90px', height: '90px', borderRadius: '8px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
                       <Loader size={32} style={{ animation: 'spin 1s linear infinite' }} />
                     </div>
                   ) : formData.profileImage ? (
                     <img
                       src={formData.profileImage}
                       alt="Preview"
-                      style={{ width: '90px', height: '90px', borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--primary)' }}
+                      style={{ width: '90px', height: '90px', borderRadius: '8px', objectFit: 'cover', border: '3px solid var(--primary)' }}
                     />
                   ) : (
-                    <div style={{ width: '90px', height: '90px', borderRadius: '50%', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                    <div style={{ width: '90px', height: '90px', borderRadius: '8px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
                       <Camera size={36} />
                     </div>
                   )}

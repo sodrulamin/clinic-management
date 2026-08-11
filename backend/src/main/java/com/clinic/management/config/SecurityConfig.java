@@ -57,6 +57,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth ->
                         auth.requestMatchers("/api/v1/auth/**").permitAll()
                                 .requestMatchers("/api/v1/appointment-requests/public").permitAll()
+                                .requestMatchers("/api/v1/files/**").permitAll()
                                 .anyRequest().authenticated()
                 );
 

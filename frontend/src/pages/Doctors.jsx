@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useContext } from 'react';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
-import { Stethoscope, Plus, Edit, Trash2, X, Upload, Camera, Search, Filter } from 'lucide-react';
+import { Stethoscope, Plus, Edit, Trash2, X, Upload, Camera, Search, Filter, Loader } from 'lucide-react';
+
 
 const DAYS = [
   { short: 'Mon', full: 'Monday' },
@@ -222,20 +223,35 @@ export const Doctors = () => {
     setShowModal(true);
   };
 
-  const handleImageChange = (e) => {
+  const [imageUploading, setImageUploading] = useState(false);
+
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        alert('Please select an image smaller than 2MB.');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData((prev) => ({ ...prev, profileImage: reader.result }));
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file.');
+      return;
+    }
+
+    const formDataUpload = new FormData();
+    formDataUpload.append('file', file);
+
+    setImageUploading(true);
+    try {
+      const response = await api.post('/upload/image', formDataUpload, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const imageUrl = response.data.url;
+      setFormData((prev) => ({ ...prev, profileImage: imageUrl }));
+    } catch (err) {
+      alert('Image upload failed. Please try again.');
+      console.error('Image upload error:', err);
+    } finally {
+      setImageUploading(false);
     }
   };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -490,19 +506,19 @@ export const Doctors = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
             {filteredDoctors.map((doc) => (
               <div key={doc.id} className="card" style={{ marginBottom: 0, padding: '20px', position: 'relative' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
                   {doc.profileImage ? (
                     <img
                       src={doc.profileImage}
                       alt={doc.fullName}
-                      style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary)' }}
+                      style={{ width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--primary)', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
                     />
                   ) : (
-                    <div className="stat-icon teal" style={{ width: '56px', height: '56px', borderRadius: '50%' }}>
-                      <Stethoscope size={26} />
+                    <div className="stat-icon teal" style={{ width: '100px', height: '100px', borderRadius: '50%' }}>
+                      <Stethoscope size={40} />
                     </div>
                   )}
-                  <div>
+                  <div style={{ textAlign: 'center' }}>
                     <h3 style={{ fontSize: '1.05rem', fontWeight: 700 }}>{doc.fullName}</h3>
                     <span className="badge badge-info">{doc.specialization}</span>
                   </div>
@@ -550,7 +566,11 @@ export const Doctors = () => {
               {/* Profile Image Section */}
               <div className="form-group" style={{ textAlign: 'center', marginBottom: '20px' }}>
                 <div style={{ position: 'relative', display: 'inline-block' }}>
-                  {formData.profileImage ? (
+                  {imageUploading ? (
+                    <div style={{ width: '90px', height: '90px', borderRadius: '50%', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                      <Loader size={32} style={{ animation: 'spin 1s linear infinite' }} />
+                    </div>
+                  ) : formData.profileImage ? (
                     <img
                       src={formData.profileImage}
                       alt="Preview"
@@ -565,7 +585,7 @@ export const Doctors = () => {
                   <label
                     htmlFor="profile-image-upload"
                     className="btn btn-primary btn-sm"
-                    style={{ position: 'absolute', bottom: '0', right: '-10px', borderRadius: '50%', width: '32px', height: '32px', padding: 0, justifyContent: 'center', cursor: 'pointer' }}
+                    style={{ position: 'absolute', bottom: '0', right: '-10px', borderRadius: '50%', width: '32px', height: '32px', padding: 0, justifyContent: 'center', cursor: imageUploading ? 'not-allowed' : 'pointer', opacity: imageUploading ? 0.6 : 1 }}
                     title="Upload Profile Picture"
                   >
                     <Upload size={14} />
@@ -575,11 +595,12 @@ export const Doctors = () => {
                     type="file"
                     accept="image/*"
                     onChange={handleImageChange}
+                    disabled={imageUploading}
                     style={{ display: 'none' }}
                   />
                 </div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '6px' }}>
-                  Click icon to upload doctor photo
+                  {imageUploading ? 'Uploading...' : 'Click icon to upload doctor photo'}
                 </div>
               </div>
 

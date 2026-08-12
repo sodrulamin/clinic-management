@@ -64,16 +64,6 @@ services:
     depends_on:
       - spring-backend
 
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    container_name: clinic-cloudflared
-    restart: always
-    environment:
-      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN:-}
-    command: tunnel --no-autoupdate --url http://react-frontend:80
-    depends_on:
-      - react-frontend
-
 volumes:
   mysql_clinic_data:
   minio_data:

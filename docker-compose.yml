@@ -17,6 +17,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - sas-net
 
   minio:
     image: minio/minio:latest
@@ -35,6 +37,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - sas-net
 
   spring-backend:
     build: ./backend
@@ -54,6 +58,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+    networks:
+      - sas-net
 
   react-frontend:
     build: ./frontend
@@ -63,7 +69,13 @@ services:
       - "3200:80"
     depends_on:
       - spring-backend
+    networks:
+      - sas-net
 
 volumes:
   mysql_clinic_data:
   minio_data:
+  
+networks:
+  sas-net:
+    external: true

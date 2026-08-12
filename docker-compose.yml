@@ -60,7 +60,7 @@ services:
     container_name: clinic-frontend
     restart: always
     ports:
-      - "80:80"
+      - "3200:80"
     depends_on:
       - spring-backend
 

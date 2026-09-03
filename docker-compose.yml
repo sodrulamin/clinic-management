@@ -1,23 +1,4 @@
 services:
-  minio:
-    image: minio/minio:latest
-    container_name: clinic-minio
-    restart: always
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin123
-    command: server /data --console-address ":9001"
-    ports:
-      - "9001:9001"   # MinIO web console (optional, for admin access)
-    volumes:
-      - minio_data:/data
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - sas-net
 
   spring-backend:
     build: ./backend
@@ -31,10 +12,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: 81ug]3F3g}[Quza;
       MINIO_ENDPOINT: http://minio:9000
       MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin123
-    depends_on:
-      minio:
-        condition: service_healthy
+      MINIO_SECRET_KEY: JmRA2RT5R9J98Zmv
     networks:
       - sas-net
 
@@ -48,9 +26,6 @@ services:
       - spring-backend
     networks:
       - sas-net
-
-volumes:
-  minio_data:
   
 networks:
   sas-net:

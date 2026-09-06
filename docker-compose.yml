@@ -1,7 +1,9 @@
 services:
-
-  spring-backend:
-    build: ./backend
+  # Spring Boot Backend API Service
+  clinic-backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: clinic-backend
     restart: always
     ports:
@@ -16,14 +18,16 @@ services:
     networks:
       - sas-net
 
-  react-frontend:
-    build: ./frontend
+  clinic-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: clinic-frontend
     restart: always
+    depends_on:
+      - clinic-backend
     ports:
       - "3200:80"
-    depends_on:
-      - spring-backend
     networks:
       - sas-net
   
